@@ -71,16 +71,35 @@
       z-index: 1;
     }
 
-    /* Hardware-accelerated background canvas */
-    #music-canvas {
-      position: fixed;
+    /* Hero Silk Background */
+    .hero-silk-container {
+      position: absolute;
       inset: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
-      z-index: 0;
-      transform: translateZ(0);
-    }    .container {
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .hero-silk-container canvas {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    .hero-silk-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 35%, rgba(8, 11, 17, 0.1) 0%, rgba(8, 11, 17, 0.45) 60%, var(--bg) 100%),
+                  linear-gradient(to bottom, transparent 65%, var(--bg) 100%);
+      pointer-events: none;
+    }
+
+    .container {
       width: 100%;
       max-width: 1360px;
       margin: 0 auto;
@@ -228,6 +247,7 @@
     /* Hero Section: Occupies the main screen viewport */
     .hero-section {
       position: relative;
+      overflow: hidden;
       min-height: calc(100vh - 66px);
       display: flex;
       align-items: center;
@@ -1138,9 +1158,6 @@
   </style>
 </head>
 <body>
-  <!-- Stylistic Animated Music Canvas -->
-  <canvas id="music-canvas" aria-hidden="true"></canvas>
-
   <div class="ambient-glow" aria-hidden="true"></div>
 
   <!-- Header -->
@@ -1163,6 +1180,7 @@
   <main>
     <!-- Hero Section: Occupies the main screen viewport -->
     <section class="hero-section" id="hero">
+      <div class="hero-silk-container" id="hero-silk" aria-hidden="true"></div>
       <div class="container hero-container">
         <div class="hero-grid">
           <!-- Left: Text, Summary & Actions -->
@@ -1600,99 +1618,27 @@
     </div>
   </footer>
 
-  <!-- Ultra-Lightweight Music Staff Animation Canvas Script -->
+  <!-- Silk Background Script -->
+  <script src="assets/silk.js"></script>
   <script>
     (function() {
-      const canvas = document.getElementById('music-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d', { alpha: true });
-      if (!ctx) return;
-
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let width = 0;
-      let height = 0;
-      let isMobile = false;
-      let dpr = 1;
-      let grad = null;
-
-      function resize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        isMobile = width < 768;
-        dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.25);
-        canvas.width = Math.floor(width * dpr);
-        canvas.height = Math.floor(height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-        grad = ctx.createLinearGradient(0, height * 0.8, width, height * 0.2);
-        grad.addColorStop(0, 'rgba(217, 119, 6, 0.04)');
-        grad.addColorStop(0.5, 'rgba(245, 158, 11, 0.09)');
-        grad.addColorStop(1, 'rgba(217, 119, 6, 0.02)');
-      }
-
-      window.addEventListener('resize', resize, { passive: true });
-      resize();
-
-      if (prefersReduced) return;
-
-      const notes = [];
-      const noteCount = isMobile ? 6 : 12;
-      const noteGlyphs = ['♩', '♪', '♫', '♬', '𝄢', '𝄞'];
-
-      for (let i = 0; i < noteCount; i++) {
-        notes.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          speed: 0.25 + Math.random() * 0.45,
-          glyph: noteGlyphs[i % noteGlyphs.length],
-          size: 14 + Math.random() * 12,
-          opacity: 0.08 + Math.random() * 0.14,
-          drift: (Math.random() - 0.5) * 0.2
+      var heroSilk = document.getElementById('hero-silk');
+      if (heroSilk && typeof window.initSilk === 'function') {
+        window.initSilk(heroSilk, {
+          color: '#3e3e3e',
+          sheenColor: '#ffffff',
+          speed: 6.9,
+          scale: 1,
+          rotation: 0,
+          sheen: 0.5,
+          depth: 0,
+          glow: 0,
+          noiseIntensity: 1.4,
+          mouseInteraction: false,
+          clickRipple: false,
+          intro: false
         });
       }
-
-      let frame = 0;
-      function animate() {
-        frame++;
-        if (frame % (isMobile ? 2 : 1) === 0) {
-          ctx.clearRect(0, 0, width, height);
-
-          // Draw 5 subtle staff lines across screen
-          if (grad) {
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 1;
-            const baseY = height * 0.45;
-            const spacing = 18;
-            for (let l = 0; l < 5; l++) {
-              ctx.beginPath();
-              ctx.moveTo(0, baseY + l * spacing);
-              ctx.bezierCurveTo(
-                width * 0.33, baseY + l * spacing + Math.sin(frame * 0.005 + l) * 12,
-                width * 0.66, baseY + l * spacing - Math.sin(frame * 0.005 + l) * 12,
-                width, baseY + l * spacing
-              );
-              ctx.stroke();
-            }
-          }
-
-          // Draw subtle drifting notes
-          for (let i = 0; i < notes.length; i++) {
-            const n = notes[i];
-            n.y -= n.speed;
-            n.x += n.drift;
-            if (n.y < -30) {
-              n.y = height + 30;
-              n.x = Math.random() * width;
-            }
-            ctx.fillStyle = `rgba(245, 158, 11, ${n.opacity})`;
-            ctx.font = `${n.size}px serif`;
-            ctx.fillText(n.glyph, n.x, n.y);
-          }
-        }
-        requestAnimationFrame(animate);
-      }
-
-      requestAnimationFrame(animate);
     })();
   </script>
 </body>
