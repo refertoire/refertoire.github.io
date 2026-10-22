@@ -47,6 +47,7 @@ jobs:
           cp index.html dist/index.html
           cp refertoire-logo.png dist/refertoire-logo.png
           cp version.json dist/version.json
+          cp -r assets dist/assets
           touch dist/.nojekyll
 
           # 2. Web Demo (/web)
