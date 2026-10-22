@@ -23,46 +23,55 @@
 
 ## 📖 Overview
 
-**Refer-toire** is an Ensemble Repertoire Syncing app designed to remove the hassle of forgetting specific pieces to learn or to keep track of. Built by **RoddneilGemina** for choirs, choral societies, vocal ensembles, and church music programs.
+**Refertoire** is an Ensemble Repertoire Syncing app designed to eliminate the friction of lost sheet music, scattered email threads, and outdated revisions for choral societies, chamber choirs, vocal ensembles, and church music programs.
 
-In performance and rehearsal environments, singers frequently rehearse in historic stone cathedrals, sanctuaries, or backstage staging halls with weak or non-existent Wi-Fi and cellular reception. Refer-toire solves this by pairing singers to their ensemble via an **Access Code**. Upon verification against the database, the app syncs the ensemble's repertoire manifest, downloads all high-resolution sheet music PDFs to local storage, and presents scores with an interactive, stage-ready sheet music reader.
+Refertoire implements a **dual-architecture model tailored to the user's platform**:
+
+1. **Android Mobile App (Standalone APK)**:
+   - Stores scores internally in the app's sandboxed offline storage.
+   - Designed for choristers singing in historic stone sanctuaries, cathedral balconies, and backstage spaces with zero Wi-Fi or cellular connectivity.
+   - Includes a stage-ready sheet music reader with foot pedal turns and glare-free dark mode.
+
+2. **Web App (Local Directory Sync Agent for PC & iOS)**:
+   - Built for desktop PC/Mac users and iOS/iPadOS singers who cannot install APKs.
+   - Functions as an **automated local file manager sync agent**: connects to a local folder on your computer (Dropbox, iCloud, or hard drive) via the **File System Access API** and mirrors the ensemble's repertoire with organized subfolders.
+   - For iOS / iPadOS users, packages the full directory hierarchy into structured archives for the **iOS Files app** and enables 1-tap dispatch into **forScore**, **PiaScore**, or **GoodNotes**.
 
 ---
 
 ## ✨ Key Features
 
-### 1. 🔑 Access Code Verification & Instant Sync
-- **Code-Based Authentication**: Choristers connect using an ensemble access code without needing personal email accounts or complex logins.
-- **Database Verification**: Checks whether the ensemble code exists in the Supabase backend. Invalid codes trigger an immediate alert, while valid codes instantly download and cache all active sheet music files for offline access.
-- **Multi-Ensemble Switching**: Seamlessly disconnect or switch between different choirs, seasons, and projects while retaining cached scores.
-- **Role-Based Permissions**: Directors and admins can upload new sheet music, create ensembles, and manage repertoire; choristers receive an optimized reading and rehearsal experience.
+### 1. 1-Step Ensemble Code Sync
+- **Code-Based Connection**: Choristers enter an 8-character access code (e.g. `CANTOR-4819`) to immediately pair with their choir. No personal account creation or password management required for singers.
+- **Database Verification**: Validates the code against the Supabase backend and downloads the latest repertoire manifest and PDF scores for offline access.
+- **Multi-Ensemble Switching**: Seamlessly manage memberships across multiple choral groups, cathedral seasons, or festival rosters.
 
-### 2. 🎼 High-DPI Sheet Music PDF Viewer
-- **Mozilla PDF.js Engine**: High-fidelity canvas rendering powered by PDF.js with native `devicePixelRatio` scaling for crisp stave lines, notes, and lyrics.
-- **Single Page & Continuous Scroll**: Toggle between standard single-page turns (ideal for music stands) and continuous vertical scrolling.
-- **🎭 Concert Hall Stage Mode**: Inverts sheet music to high-contrast white & gold notation on an ultra-dark background (`#05070A`) to eliminate face glare and preserve night vision in dimmed performance halls.
-- **☀️ Sepia Warm Tone**: Eye-friendly parchment tone for reduced fatigue during long evening rehearsals.
-- **🔍 Precision Zoom Stepper**: Zoom in (+), zoom out (-), and reset (100%) scaling from 60% to 250%.
-- **📱 Touch Page Turn Zones**: Tap the left 25% of the score to turn back, tap the right 25% to turn forward, or tap the center to toggle distraction-free fullscreen view.
-- **🦶 Bluetooth Foot Pedal & Keyboard Navigation**: Hands-free page turns via Bluetooth foot pedals (PageFlip, AirTurn) or standard keys (`ArrowLeft`/`ArrowRight`, `PageUp`/`PageDown`, `Spacebar`).
-- **🌐 Universal Fallback**: Seamless fallback to native browser PDF engines on Web and hardware-accelerated `react-native-webview` on iOS/Android.
+### 2. Local Directory Sync Agent (Web for PC & iOS)
+- **Direct Disk Mirroring (Desktop Chrome/Edge)**: Authorize a local folder on your computer once via the native `showDirectoryPicker` API. When repertoire updates, Refertoire writes real `.pdf` files into structured subfolders on your drive.
+- **Flexible Hierarchy Layouts**:
+  - **By Program**: e.g., `01 - Lent Evensong/01 - Ave Verum Corpus.pdf`
+  - **By Voicing**: e.g., `SATB/Ave Verum Corpus (Mozart).pdf`
+  - **By Season**: e.g., `Lent/Ave Verum Corpus.pdf`
+- **iOS Files Vault**: Export the complete folder tree into a clean `.zip` archive that expands directly into a folder in the native iPadOS **Files** app.
+- **1-Tap forScore / PiaScore Dispatch**: Send individual scores directly to third-party sheet music readers via the Web Share API.
+- **Sync Manifest**: Automatically outputs a `.refertoire-sync.json` manifest recording last sync time and file checksums.
 
-### 3. 📝 Conductor's Rehearsal Notes & Voicing
-- **Voice Part Highlighting**: Set your personal voice part (e.g., *Soprano 1*, *Alto*, *Tenor 2*, *Bass*) in Settings to see section highlights across scores.
-- **Collapsible Notes Drawer**: Access director instructions, translation notes, tempo markings, and key signatures directly within the score viewer.
-- **External Export**: One-tap export via `expo-sharing` to open PDFs in **forScore**, **MobileSheets**, AirDrop, or Print.
+### 3. Study Mode with Built-in High-DPI PDF Viewer & Page Flip
+- **Mozilla PDF.js Canvas Engine**: Native canvas rendering with device pixel ratio scaling for razor-sharp stave lines and choral text under extreme zoom.
+- **Concert Stage Mode**: Glare-free dark palette that inverts notation to warm notation on a deep `#0B0C10` canvas, eliminating harsh white light on singers' faces during dimmed performances.
+- **Hands-Free Foot Pedal Navigation**: Native support for Bluetooth pedals (AirTurn, PageFlip) and keyboard hotkeys (`ArrowLeft`, `ArrowRight`, `PageUp`, `PageDown`).
+- **Tactile Page Turns**: Interactive turn zones (tap left 25% for previous, right 25% for next, center to toggle controls).
 
-### 4. 📤 File-First Sheet Music Uploads
-- **Streamlined Upload Workflow**: Tapping "+ Upload PDF" immediately launches the native device file chooser (`expo-document-picker`). The upload modal only presents after a PDF is selected.
-- **Auto-Title Extraction**: Cleans filename conventions (e.g., `Ave_Verum_Corpus.pdf` → `Ave Verum Corpus`) to minimize typing.
-- **Supabase Cloud Storage**: Uploads PDFs to the Supabase `scores` bucket and registers metadata in PostgreSQL with real-time sync to all choristers.
+### 4. Sorting by Song Classification
+- **Voicing Filters**: Filter scores instantly by `SATB`, `SSAA`, `TTBB`, `SAB`, or `Unison`.
+- **Liturgical Seasons**: Sort by `Advent`, `Lent`, `Holy Week`, `Easter`, `Christmas`, `Concert`, or `General`.
+- **Composer Indexing**: Group pieces alphabetically by composer surname or piece title.
+- **Instant Search & Bookmarks**: Real-time filtering across titles, composers, arrangers, and rehearsal bookmarks.
 
-### 5. 📚 Multi-Dimensional Library Sorting
-- **Alphabetical Title Sorting**: Clean A–Z and Z–A library views.
-- **Composer Sorting**: Smart grouping by composer surname (e.g., Mozart, Fauré, Palestrina, Byrd, Whitacre).
-- **Choral Voicings**: Filter by `SATB`, `SATB div.`, `SSAA`, `SSA`, `TTBB`, `TTB`, `SAB`, `Two-Part`, or `Unison`.
-- **Liturgical Seasons**: Categorize by `Advent`, `Christmas`, `Epiphany`, `Lent`, `Holy Week`, `Easter`, `Pentecost`, `Ordinary Time`, `Evensong`, `Concert`, or `General`.
-- **Instant Search & Favorites**: Real-time filtering across titles, composers, arrangers, tags, and rehearsal bookmarks.
+### 5. Scheduling & Performance Setlists
+- **Ordered Concert Programs**: Directors group and sequence pieces for specific services, evensongs, or concerts.
+- **Sequence Preservation**: Singers flip straight through concert setlists in performance order without hunting through the master catalog.
+- **Admin Management**: Directors can create, reorder, edit, and delete programs with real-time sync to all choristers.
 
 ---
 
@@ -72,26 +81,33 @@ In performance and rehearsal environments, singers frequently rehearse in histor
 refertoire.github.io/
 ├── .github/
 │   └── workflows/
-│       └── deploy-pages.yml      # CI/CD: Automated build & GitHub Pages deployment
+│       └── deploy-pages.yml          # Automated CI/CD deployment to GitHub Pages
 ├── apk/
-│   ├── Refertoire.apk            # Direct standalone Android APK binary (~49 MB)
-│   └── index.html                # Auto-download redirect page for /apk/
-├── web/                          # Expo SDK 57 React Native & Web application
-│   ├── app/                      # Expo Router navigation and screens
-│   │   ├── (tabs)/               # Tab bar (Repertoire, Programs, Settings)
-│   │   ├── score/[id].tsx        # Stage Mode sheet music viewer
-│   │   ├── login.tsx             # Access code verification & group setup
-│   │   └── download.tsx          # Client-side download handler
-│   ├── components/               # Mozilla PDF.js canvas viewer, modals, UI
-│   ├── services/                 # Supabase sync, offline downloads, updates
-│   ├── context/                  # RepertoireContext global state
-│   ├── constants/                # Colors, palettes, voice categories
-│   ├── types/                    # TypeScript interfaces and schema
-│   ├── app.json                  # Expo SDK 57 config (baseUrl: "/web")
-│   └── package.json              # Web app dependencies & Expo scripts
-├── index.html                    # Root portal landing page showcasing web & apk
-├── package.json                  # Root workspace script runner
-└── README.md
+│   ├── Refertoire.apk                # Standalone Android APK binary (~49 MB)
+│   └── index.html                    # Auto-download redirect page for /apk/
+├── assets/                           # Device mockups (iPad Mini & Flagship Phone)
+├── web/                              # Expo SDK 57 React Native & Web Application
+│   ├── app/                          # Expo Router file-based routes
+│   │   ├── (tabs)/
+│   │   │   ├── _layout.tsx           # Tab bar: Repertoire, Programs, Sync Agent
+│   │   │   ├── index.tsx             # Score library, search, and voicing filters
+│   │   │   ├── setlists.tsx          # Concert programs and ordered setlists
+│   │   │   └── settings.tsx          # Local Directory Sync Agent & choir settings
+│   │   ├── score/[id].tsx            # Stage Mode sheet music reader
+│   │   ├── login.tsx                 # Ensemble access code verification
+│   │   └── download.tsx              # Standalone APK download handler
+│   ├── services/
+│   │   ├── hybridSyncService.ts      # File System Access API & iOS ZIP export engine
+│   │   ├── databaseService.ts        # Supabase PostgreSQL queries and mutations
+│   │   ├── downloadService.ts        # In-memory and disk caching
+│   │   └── authService.ts            # Session management and code verification
+│   ├── context/                      # RepertoireContext global state
+│   ├── components/                   # Themed components, PDF viewer, upload modals
+│   ├── constants/                    # Color tokens and voicing palettes
+│   └── types/                        # TypeScript interfaces
+├── index.html                        # Portal landing page showcasing mockups & features
+├── package.json                      # Root workspace scripts
+└── README.md                         # Documentation
 ```
 
 ---

@@ -18,9 +18,18 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: theme.card,
           borderTopColor: theme.border,
+          height: 72,
+          paddingBottom: 16,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontWeight: '600',
+          fontSize: 11,
+          marginBottom: 4,
         },
         headerStyle: {
           backgroundColor: theme.card,
+          height: 60,
         },
         headerTitleStyle: {
           color: theme.text,
@@ -73,11 +82,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Ensemble',
-          headerTitle: 'Choir & Storage',
+          title: 'Sync Agent',
+          headerTitle: 'Local Directory Sync Agent',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? 'server' : 'server-outline'}
+              name={focused ? 'folder-open' : 'folder-open-outline'}
               size={22}
               color={color}
             />

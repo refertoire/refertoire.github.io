@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -21,6 +21,7 @@ import { useRepertoire } from '@/context/RepertoireContext';
 import { DownloadService } from '@/services/downloadService';
 import { NetworkService } from '@/services/networkService';
 import { UpdateService } from '@/services/updateService';
+import { HybridSyncService, HierarchyMode, SyncProgressUpdate } from '@/services/hybridSyncService';
 import * as DocumentPicker from 'expo-document-picker';
 import UploadScoreModal, { SelectedPdfFile } from '@/components/UploadScoreModal';
 import EnsembleMembersModal from '@/components/EnsembleMembersModal';
@@ -52,56 +53,135 @@ export default function SettingsScreen() {
   const [updateCheckStatus, setUpdateCheckStatus] = useState<string | null>(null);
   const [pendingUploadFile, setPendingUploadFile] = useState<SelectedPdfFile | null>(null);
 
+  // Hybrid Sync Agent State
+  const isFsaSupported = HybridSyncService.isFileSystemAccessSupported();
+  const isIOS = HybridSyncService.isIOS();
+  const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
+  const [linkedFolderName, setLinkedFolderName] = useState<string | null>(null);
+  const [hierarchyMode, setHierarchyMode] = useState<HierarchyMode>('by_program');
+  const [isSyncingDisk, setIsSyncingDisk] = useState(false);
+  const [syncDiskProgress, setSyncDiskProgress] = useState<SyncProgressUpdate | null>(null);
+  const [showTreePreview, setShowTreePreview] = useState(false);
+
+  // Restore stored directory handle on desktop
+  useEffect(() => {
+    async function loadStoredHandle() {
+      if (isFsaSupported) {
+        const handle = await HybridSyncService.getStoredDirectoryHandle();
+        if (handle) {
+          setDirectoryHandle(handle);
+          setLinkedFolderName(handle.name);
+        }
+      }
+    }
+    loadStoredHandle();
+  }, [isFsaSupported]);
+
+  // Build live directory tree preview
+  const previewTree = useMemo(() => {
+    if (!currentInstance) return [];
+    return HybridSyncService.buildSyncTree(currentInstance, hierarchyMode);
+  }, [currentInstance, hierarchyMode]);
+
+  // Pick local folder (Desktop)
+  const handlePickFolder = async () => {
+    try {
+      const handle = await HybridSyncService.pickDirectory();
+      if (handle) {
+        setDirectoryHandle(handle);
+        setLinkedFolderName(handle.name);
+        // Automatically run initial sync to populate the folder
+        if (currentInstance) {
+          setIsSyncingDisk(true);
+          await HybridSyncService.syncToLocalDisk(
+            handle,
+            currentInstance,
+            hierarchyMode,
+            setSyncDiskProgress
+          );
+          setIsSyncingDisk(false);
+        }
+      }
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        Alert.alert('Folder Selection Notice', e.message || 'Could not access the selected directory.');
+      }
+    }
+  };
+
+  // Unlink folder
+  const handleUnlinkFolder = async () => {
+    await HybridSyncService.removeDirectoryHandle();
+    setDirectoryHandle(null);
+    setLinkedFolderName(null);
+  };
+
+  // Sync to local disk (Desktop)
+  const handleSyncToDisk = async () => {
+    if (!directoryHandle || !currentInstance) return;
+    setIsSyncingDisk(true);
+    try {
+      const result = await HybridSyncService.syncToLocalDisk(
+        directoryHandle,
+        currentInstance,
+        hierarchyMode,
+        setSyncDiskProgress
+      );
+      Alert.alert(
+        'Sync Complete',
+        `Synchronized ${result.syncedCount} score files to ${linkedFolderName}/.`
+      );
+    } catch (e: any) {
+      Alert.alert('Sync Error', e.message || 'Failed to sync to local directory.');
+    } finally {
+      setIsSyncingDisk(false);
+    }
+  };
+
+  // Export ZIP archive (iOS Files / universal fallback)
+  const handleExportZip = async () => {
+    if (!currentInstance) return;
+    setIsSyncingDisk(true);
+    try {
+      const zipBlob = await HybridSyncService.exportZipArchive(
+        currentInstance,
+        hierarchyMode,
+        setSyncDiskProgress
+      );
+      const filename = `${currentInstance.name.replace(/\s+/g, '-')}-Scores.zip`;
+      await HybridSyncService.shareOrDownloadFile(
+        zipBlob,
+        filename,
+        `${currentInstance.name} Repertoire Files`
+      );
+    } catch (e: any) {
+      Alert.alert('Export Notice', e.message || 'Could not generate archive package.');
+    } finally {
+      setIsSyncingDisk(false);
+    }
+  };
+
   const handleCheckForUpdates = async () => {
     if (isCheckingUpdate) return;
     setIsCheckingUpdate(true);
-    setUpdateCheckStatus('Checking for updates...');
+    setUpdateCheckStatus('Checking...');
 
     try {
       const result = await UpdateService.checkForUpdates(true);
       if (result.available && result.release) {
-        setUpdateCheckStatus(`New build available: v${result.release.version}`);
+        setUpdateCheckStatus(`v${result.release.version} available`);
         UpdateService.simulateUpdate(result.release);
       } else {
-        setUpdateCheckStatus('Your app is up to date.');
+        setUpdateCheckStatus('Up to date');
         Alert.alert(
           'Up to Date',
-          `Refertoire v${result.currentVersion} (Build ${result.currentBuildNumber}) is currently the latest version.`
+          `Refertoire v${result.currentVersion} (Build ${result.currentBuildNumber}) is the latest version.`
         );
       }
-    } catch (err: any) {
-      setUpdateCheckStatus('Update check failed.');
-      Alert.alert('Notice', 'Unable to check for updates right now.');
+    } catch {
+      setUpdateCheckStatus('Check failed');
     } finally {
       setIsCheckingUpdate(false);
-    }
-  };
-
-  const handlePickScoreFile = async () => {
-    if (isOfflineMode || !NetworkService.isOnline()) {
-      Alert.alert(
-        'Upload Unavailable',
-        'You can only upload sheet music while in online mode with an active internet connection. Please disable Offline Mode first.'
-      );
-      return;
-    }
-
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/*'],
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        setPendingUploadFile({
-          uri: asset.uri,
-          name: asset.name,
-          size: asset.size,
-        });
-      }
-    } catch (err) {
-      console.warn('Error opening file picker:', err);
     }
   };
 
@@ -120,12 +200,10 @@ export default function SettingsScreen() {
     if (!currentInstance) return;
     try {
       await Share.share({
-        title: `Join ${currentInstance.name} on Refer-toire`,
-        message: `Join our choir repertoire on the Refer-toire app! Use Choir Access Code: ${currentInstance.code} to download all our sheet music offline.`,
+        title: `Join ${currentInstance.name} on Refertoire`,
+        message: `Join our repertoire on Refertoire! Use Ensemble Access Code: ${currentInstance.code}`,
       });
-    } catch {
-      // Ignored
-    }
+    } catch {}
   };
 
   const handleClearCache = async () => {
@@ -153,635 +231,998 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { borderBottomColor: theme.border }]}>
-        <Text style={[styles.screenTitle, { color: theme.text }]}>Choir & Storage</Text>
-        <Text style={[styles.screenSub, { color: theme.subtext }]}>
-          Manage offline storage, member codes, and ensemble permissions
-        </Text>
-      </View>
+      <View style={styles.responsiveContainer}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.screenTitle, { color: theme.text }]}>Settings & Ensemble</Text>
+          <Text style={[styles.screenSub, { color: theme.subtext }]}>
+            Offline storage, ensemble codes, and sync settings
+          </Text>
+        </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* User Account Card */}
-        {currentUser && (
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}>
-            <View style={[styles.cardHeader, { backgroundColor: 'transparent' }]}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>Signed In Account</Text>
-              <TouchableOpacity
-                onPress={async () => {
-                  await signOutUser();
-                  router.push('/login');
-                }}>
-                <Text style={[styles.switchLink, { color: Colors.status.failed }]}>Sign Out</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={[styles.userProfileRow, { backgroundColor: 'transparent' }]}>
-              <View style={[styles.userAvatar, { backgroundColor: theme.badgeBackground }]}>
-                <Ionicons name="person" size={20} color={theme.tint} />
-              </View>
-              <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-                <Text style={[styles.userName, { color: theme.text }]}>{currentUser.fullName}</Text>
-                <Text style={[styles.userEmail, { color: theme.subtext }]}>{currentUser.email}</Text>
-              </View>
-              <View style={[styles.roleBadge, { backgroundColor: userRole === 'admin' ? theme.badgeBackground : theme.surfaceSubtle }]}>
-                <Text style={[styles.roleBadgeText, { color: userRole === 'admin' ? theme.badgeText : theme.subtext }]}>
-                  {userRole === 'admin' ? '👑 Admin' : '👤 Member'}
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Active Ensemble & Role Card */}
-        {currentInstance ? (
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.border },
-            ]}>
-            <View style={[styles.cardHeader, { backgroundColor: 'transparent' }]}>
-              <View style={[styles.roleBadge, { backgroundColor: userRole === 'admin' ? theme.badgeBackground : theme.surfaceSubtle }]}>
-                <Text style={[styles.roleBadgeText, { color: userRole === 'admin' ? theme.badgeText : theme.subtext }]}>
-                  {userRole === 'admin' ? '👑 Group Director / Admin' : '👤 Ensemble Singer / Member'}
-                </Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Active Ensemble Section */}
+          <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={styles.sectionCardHeader}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="musical-notes" size={17} color={theme.tint} />
+                <Text style={[styles.sectionCardTitle, { color: theme.text }]}>Active Ensemble</Text>
               </View>
               <TouchableOpacity onPress={() => router.push('/login')}>
-                <Text style={[styles.switchLink, { color: theme.tint }]}>Switch Group</Text>
+                <Text style={[styles.headerLink, { color: theme.tint }]}>Switch Group</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={[styles.choirTitle, { color: theme.text }]}>{currentInstance.name}</Text>
-            {currentInstance.subtitle && (
-              <Text style={[styles.choirSubtext, { color: theme.subtext }]}>
-                {currentInstance.subtitle}
-              </Text>
-            )}
-
-            <View style={[styles.infoRow, { backgroundColor: 'transparent' }]}>
-              <Text style={[styles.infoLabel, { color: theme.subtext }]}>Director:</Text>
-              <Text style={[styles.infoValue, { color: theme.text }]}>
-                {currentInstance.director}
-              </Text>
-            </View>
-
-            <View style={[styles.infoRow, { backgroundColor: 'transparent' }]}>
-              <Text style={[styles.infoLabel, { color: theme.subtext }]}>Season:</Text>
-              <Text style={[styles.infoValue, { color: theme.text }]}>
-                {currentInstance.seasonName}
-              </Text>
-            </View>
-
-            <View style={[styles.infoRow, { backgroundColor: 'transparent' }]}>
-              <Text style={[styles.infoLabel, { color: theme.subtext }]}>Access Code:</Text>
-              <Text style={[styles.infoCodeValue, { color: theme.tint }]}>
-                {currentInstance.code}
-              </Text>
-            </View>
-
-            {/* View Ensemble Members Button */}
-            <TouchableOpacity
-              style={[
-                styles.membersNavBtn,
-                { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
-              ]}
-              onPress={() => setShowMembersModal(true)}>
-              <View style={[styles.membersNavLeft, { backgroundColor: 'transparent' }]}>
-                <Ionicons name="people" size={18} color={theme.tint} style={{ marginRight: 8 }} />
-                <Text style={[styles.membersNavTitle, { color: theme.text }]}>
-                  Ensemble Members
-                </Text>
-                <View style={[styles.memberCountBadge, { backgroundColor: theme.badgeBackground }]}>
-                  <Text style={[styles.memberCountText, { color: theme.badgeText }]}>
-                    {ensembleMembers.length}
+            {currentInstance ? (
+              <View style={styles.sectionBody}>
+                <View style={styles.ensembleTitleRow}>
+                  <Text style={[styles.ensembleName, { color: theme.text }]} numberOfLines={1}>
+                    {currentInstance.name}
                   </Text>
+                  <View
+                    style={[
+                      styles.rolePill,
+                      { backgroundColor: userRole === 'admin' ? theme.badgeBackground : theme.surfaceSubtle },
+                    ]}>
+                    <Text
+                      style={[
+                        styles.rolePillText,
+                        { color: userRole === 'admin' ? theme.badgeText : theme.subtext },
+                      ]}>
+                      {userRole === 'admin' ? 'Director' : 'Singer'}
+                    </Text>
+                  </View>
                 </View>
+
+                {currentInstance.director && (
+                  <Text style={[styles.ensembleMeta, { color: theme.subtext }]}>
+                    Director: {currentInstance.director}
+                    {currentInstance.seasonName ? ` • ${currentInstance.seasonName}` : ''}
+                  </Text>
+                )}
+
+                {/* Access Code Box */}
+                <View style={[styles.codeRow, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+                  <View>
+                    <Text style={[styles.codeLabel, { color: theme.subtext }]}>ACCESS CODE</Text>
+                    <Text style={[styles.codeValue, { color: theme.tint }]}>{currentInstance.code}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.shareBtn, { backgroundColor: theme.tint }]}
+                    onPress={handleShareCode}>
+                    <Ionicons name="share-social-outline" size={14} color="#FFFFFF" style={{ marginRight: 5 }} />
+                    <Text style={styles.shareBtnText}>Share Code</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Members list link */}
+                <TouchableOpacity
+                  style={[styles.actionRowBtn, { borderTopColor: theme.border }]}
+                  onPress={() => setShowMembersModal(true)}>
+                  <View style={styles.actionRowLeft}>
+                    <Ionicons name="people-outline" size={18} color={theme.text} />
+                    <Text style={[styles.actionRowLabel, { color: theme.text }]}>Ensemble Members</Text>
+                  </View>
+                  <View style={styles.actionRowRight}>
+                    <View style={[styles.countBadge, { backgroundColor: theme.surfaceSubtle }]}>
+                      <Text style={[styles.countText, { color: theme.subtext }]}>{ensembleMembers.length}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={theme.subtext} />
+                  </View>
+                </TouchableOpacity>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.subtext} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[
-              styles.card,
-              { backgroundColor: theme.card, borderColor: theme.border, alignItems: 'center' },
-            ]}
-            onPress={() => router.push('/login')}>
-            <Ionicons name="key-outline" size={32} color={theme.tint} style={{ marginBottom: 8 }} />
-            <Text style={[styles.choirTitle, { color: theme.text }]}>No Choir Connected</Text>
-            <Text style={[styles.choirSubtext, { color: theme.subtext, textAlign: 'center' }]}>
-              Tap to enter an access code or create a new choir group
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* ADMIN INVITE & UPLOAD BANNER */}
-        {userRole === 'admin' && currentInstance && (
-          <View
-            style={[
-              styles.adminBannerCard,
-              { backgroundColor: theme.badgeBackground, borderColor: theme.tint },
-            ]}>
-            <View style={[styles.adminBannerHeader, { backgroundColor: 'transparent' }]}>
-              <Ionicons name="megaphone" size={20} color={theme.tint} />
-              <Text style={[styles.adminBannerTitle, { color: theme.badgeText }]}>
-                Invite Singers to Your Repertoire
-              </Text>
-            </View>
-
-            <Text style={[styles.adminBannerText, { color: theme.badgeText }]}>
-              Give this code to your choir members. When they enter it in Refer-toire, all uploaded scores will sync to their phones automatically:
-            </Text>
-
-            <View style={[styles.codeDisplayBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Text style={[styles.bigCodeText, { color: theme.tint }]}>
-                {currentInstance.code}
-              </Text>
+            ) : (
               <TouchableOpacity
-                style={[styles.shareCodeBtn, { backgroundColor: theme.tint }]}
-                onPress={handleShareCode}>
-                <Ionicons name="share-social-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={styles.shareCodeBtnText}>Share Code</Text>
+                style={styles.connectPrompt}
+                onPress={() => router.push('/login')}>
+                <Text style={[styles.connectPromptText, { color: theme.tint }]}>
+                  Connect with Choir Code →
+                </Text>
               </TouchableOpacity>
-            </View>
+            )}
           </View>
-        )}
 
-        {/* Network & Offline Mode Card */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => setOfflineMode(!isOfflineMode)}
-          style={[
-            styles.card,
-            { backgroundColor: theme.card, borderColor: theme.border },
-          ]}>
-          <View style={[styles.switchCardRow, { backgroundColor: 'transparent' }]}>
-            <View style={{ flex: 1, backgroundColor: 'transparent', paddingRight: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', gap: 6 }}>
+          {/* Local Directory Sync Agent (Desktop FSA & iOS Vault) */}
+          <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={styles.sectionCardHeader}>
+              <View style={styles.sectionTitleRow}>
                 <Ionicons
-                  name={isOfflineMode ? 'cloud-offline' : 'cloud-done'}
-                  size={20}
-                  color={isOfflineMode ? '#F59E0B' : Colors.status.completed}
+                  name={isFsaSupported ? 'folder-open' : 'cloud-download-outline'}
+                  size={18}
+                  color={theme.tint}
                 />
-                <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 0 }]}>
-                  {isOfflineMode ? 'Offline Mode Active' : 'Online Live Mode'}
+                <Text style={[styles.sectionCardTitle, { color: theme.text }]}>
+                  {isFsaSupported ? 'Local Directory Sync Agent' : 'Repertoire File Manager & Vault'}
                 </Text>
               </View>
-              <Text style={[styles.sectionSub, { color: theme.subtext, marginTop: 4, marginBottom: 0 }]}>
-                {isOfflineMode
-                  ? 'App uses cached repertoire with 0ms network latency. Tap to restore online sync.'
-                  : 'Live synchronization is active. Changes and updates from the director will sync automatically.'}
-              </Text>
+              <View
+                style={[
+                  styles.syncStatusPill,
+                  {
+                    backgroundColor: linkedFolderName
+                      ? 'rgba(16, 185, 129, 0.12)'
+                      : theme.surfaceSubtle,
+                  },
+                ]}>
+                <View
+                  style={[
+                    styles.syncDot,
+                    {
+                      backgroundColor: linkedFolderName
+                        ? '#10B981'
+                        : theme.subtext,
+                    },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.syncStatusText,
+                    {
+                      color: linkedFolderName ? '#10B981' : theme.subtext,
+                    },
+                  ]}>
+                  {linkedFolderName ? 'Disk Mirror Linked' : isIOS ? 'iOS Vault Active' : 'Ready to Link'}
+                </Text>
+              </View>
             </View>
-            <Switch
-              value={isOfflineMode}
-              onValueChange={setOfflineMode}
-              trackColor={{ false: theme.surfaceSubtle, true: '#F59E0B' }}
-              thumbColor={isOfflineMode ? '#FFFFFF' : '#F3F4F6'}
-            />
-          </View>
-        </TouchableOpacity>
 
-        {/* Offline Storage Engine */}
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.card, borderColor: theme.border },
-          ]}>
-          <View style={[styles.storageHeader, { backgroundColor: 'transparent' }]}>
-            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Offline PDF Storage
-              </Text>
-              <Text style={[styles.sectionSub, { color: theme.subtext }]}>
-                {downloadedCount} of {totalScores} scores stored locally
-              </Text>
-            </View>
-            <Ionicons name="shield-checkmark" size={24} color={Colors.status.completed} />
-          </View>
-
-          {/* Storage Bar */}
-          <View style={[styles.storageBarBg, { backgroundColor: theme.surfaceSubtle }]}>
-            <View
-              style={[
-                styles.storageBarFill,
-                {
-                  backgroundColor: Colors.status.completed,
-                  width: `${totalScores > 0 ? (downloadedCount / totalScores) * 100 : 0}%`,
-                },
-              ]}
-            />
-          </View>
-
-          <View style={[styles.storageStatsRow, { backgroundColor: 'transparent' }]}>
-            <Text style={[styles.statText, { color: theme.subtext }]}>
-              Disk Usage: {diskSizeMB} MB
-            </Text>
-            <Text style={[styles.statText, { color: Colors.status.completed }]}>
-              {downloadedCount === totalScores ? '100% Offline Ready' : 'Incomplete Sync'}
-            </Text>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={[styles.buttonRow, { backgroundColor: 'transparent' }]}>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
-              ]}
-              onPress={handleResync}
-              disabled={resyncing || isSyncing}>
-              {resyncing || isSyncing ? (
-                <ActivityIndicator size="small" color={theme.tint} />
-              ) : (
+            <View style={styles.sectionBody}>
+              {/* Desktop Direct Disk Flow */}
+              {isFsaSupported ? (
                 <>
-                  <Ionicons name="sync-outline" size={16} color={theme.text} style={{ marginRight: 6 }} />
-                  <Text style={[styles.actionButtonText, { color: theme.text }]}>Re-sync All</Text>
+                  {linkedFolderName ? (
+                    <View style={[styles.linkedFolderBox, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+                      <View style={styles.linkedFolderInfo}>
+                        <Ionicons name="folder" size={24} color={theme.tint} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.linkedFolderLabel, { color: theme.subtext }]}>
+                            TARGET LOCAL DIRECTORY
+                          </Text>
+                          <Text style={[styles.linkedFolderPath, { color: theme.text }]} numberOfLines={1}>
+                            {linkedFolderName}/
+                          </Text>
+                        </View>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.unlinkBtn}
+                        onPress={handleUnlinkFolder}
+                        disabled={isSyncingDisk}>
+                        <Ionicons name="close-circle-outline" size={16} color={theme.subtext} />
+                        <Text style={[styles.unlinkText, { color: theme.subtext }]}>Change</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={[styles.unlinkedPromptBox, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+                      <View style={styles.unlinkedPromptLeft}>
+                        <Ionicons name="folder-outline" size={24} color={theme.tint} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.promptTitle, { color: theme.text }]}>
+                            No local choir directory linked
+                          </Text>
+                          <Text style={[styles.promptSub, { color: theme.subtext }]}>
+                            Select a folder on your computer, iCloud, or Dropbox to mirror repertoire and folders.
+                          </Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.primaryActionBtn, { backgroundColor: theme.tint }]}
+                        onPress={handlePickFolder}
+                        disabled={isSyncingDisk}>
+                        <Ionicons name="folder-open-outline" size={16} color="#0D0E12" style={{ marginRight: 6 }} />
+                        <Text style={styles.primaryActionBtnText}>Link Local Folder</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Hierarchy Mode Selector */}
+                  <View style={styles.hierarchyModeContainer}>
+                    <Text style={[styles.settingLabel, { color: theme.subtext }]}>
+                      FOLDER HIERARCHY STRUCTURE
+                    </Text>
+                    <View style={[styles.modeSegmentedBar, { backgroundColor: theme.surfaceSubtle }]}>
+                      {(['by_program', 'by_voicing', 'by_season'] as HierarchyMode[]).map((mode) => (
+                        <TouchableOpacity
+                          key={mode}
+                          style={[
+                            styles.modeSegmentBtn,
+                            hierarchyMode === mode && {
+                              backgroundColor: theme.card,
+                              shadowColor: '#000',
+                              shadowOffset: { width: 0, height: 1 },
+                              shadowOpacity: 0.1,
+                              shadowRadius: 2,
+                            },
+                          ]}
+                          onPress={() => setHierarchyMode(mode)}>
+                          <Text
+                            style={[
+                              styles.modeSegmentText,
+                              {
+                                color: hierarchyMode === mode ? theme.text : theme.subtext,
+                                fontWeight: hierarchyMode === mode ? '700' : '500',
+                              },
+                            ]}>
+                            {mode === 'by_program'
+                              ? 'By Program'
+                              : mode === 'by_voicing'
+                              ? 'By Voicing'
+                              : 'By Season'}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Desktop Sync Action & Progress */}
+                  {linkedFolderName && (
+                    <View style={styles.syncActionArea}>
+                      {isSyncingDisk && syncDiskProgress && (
+                        <View style={styles.progressContainer}>
+                          <View style={styles.progressHeaderRow}>
+                            <Text style={[styles.progressCurrentFile, { color: theme.text }]} numberOfLines={1}>
+                              {syncDiskProgress.currentFile}
+                            </Text>
+                            <Text style={[styles.progressRatio, { color: theme.tint }]}>
+                              {syncDiskProgress.current} / {syncDiskProgress.total}
+                            </Text>
+                          </View>
+                          <View style={[styles.storageBarBg, { backgroundColor: theme.surfaceSubtle }]}>
+                            <View
+                              style={[
+                                styles.storageBarFill,
+                                {
+                                  backgroundColor: theme.tint,
+                                  width: `${(syncDiskProgress.current / syncDiskProgress.total) * 100}%`,
+                                },
+                              ]}
+                            />
+                          </View>
+                        </View>
+                      )}
+
+                      <TouchableOpacity
+                        style={[styles.primaryActionBtn, { backgroundColor: theme.tint }]}
+                        onPress={handleSyncToDisk}
+                        disabled={isSyncingDisk}>
+                        {isSyncingDisk ? (
+                          <ActivityIndicator size="small" color="#0D0E12" />
+                        ) : (
+                          <>
+                            <Ionicons name="sync" size={17} color="#0D0E12" style={{ marginRight: 6 }} />
+                            <Text style={styles.primaryActionBtnText}>Sync to Local Disk Now</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
+              ) : (
+                /* iOS / iPadOS Files Vault Flow */
+                <>
+                  <View style={[styles.iosNoticeBox, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+                    <Ionicons name="phone-portrait-outline" size={24} color={theme.tint} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.promptTitle, { color: theme.text }]}>
+                        iOS Repertoire Vault
+                      </Text>
+                      <Text style={[styles.promptSub, { color: theme.subtext }]}>
+                        Export your choir's complete folder tree directly into the iPad Files app, or share pieces to forScore & PiaScore.
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Hierarchy Mode Selector for Export */}
+                  <View style={styles.hierarchyModeContainer}>
+                    <Text style={[styles.settingLabel, { color: theme.subtext }]}>
+                      FOLDER HIERARCHY STRUCTURE
+                    </Text>
+                    <View style={[styles.modeSegmentedBar, { backgroundColor: theme.surfaceSubtle }]}>
+                      {(['by_program', 'by_voicing', 'by_season'] as HierarchyMode[]).map((mode) => (
+                        <TouchableOpacity
+                          key={mode}
+                          style={[
+                            styles.modeSegmentBtn,
+                            hierarchyMode === mode && {
+                              backgroundColor: theme.card,
+                              shadowColor: '#000',
+                              shadowOffset: { width: 0, height: 1 },
+                              shadowOpacity: 0.1,
+                              shadowRadius: 2,
+                            },
+                          ]}
+                          onPress={() => setHierarchyMode(mode)}>
+                          <Text
+                            style={[
+                              styles.modeSegmentText,
+                              {
+                                color: hierarchyMode === mode ? theme.text : theme.subtext,
+                                fontWeight: hierarchyMode === mode ? '700' : '500',
+                              },
+                            ]}>
+                            {mode === 'by_program'
+                              ? 'By Program'
+                              : mode === 'by_voicing'
+                              ? 'By Voicing'
+                              : 'By Season'}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* iOS Export Action */}
+                  <TouchableOpacity
+                    style={[styles.primaryActionBtn, { backgroundColor: theme.tint }]}
+                    onPress={handleExportZip}
+                    disabled={isSyncingDisk}>
+                    {isSyncingDisk ? (
+                      <ActivityIndicator size="small" color="#0D0E12" />
+                    ) : (
+                      <>
+                        <Ionicons name="share-outline" size={17} color="#0D0E12" style={{ marginRight: 6 }} />
+                        <Text style={styles.primaryActionBtnText}>
+                          Export Folder Hierarchy to Files (.zip)
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
                 </>
               )}
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
-              ]}
-              onPress={handleClearCache}
-              disabled={isClearingCache}>
-              {isClearingCache ? (
-                <ActivityIndicator size="small" color={Colors.status.failed} style={{ marginRight: 6 }} />
-              ) : (
-                <Ionicons name="trash-outline" size={16} color={Colors.status.failed} style={{ marginRight: 6 }} />
+              {/* Folder Tree Preview Toggle */}
+              {currentInstance && (
+                <View style={[styles.treeSection, { borderTopColor: theme.border }]}>
+                  <TouchableOpacity
+                    style={styles.treeToggleHeader}
+                    onPress={() => setShowTreePreview(!showTreePreview)}>
+                    <View style={styles.treeToggleLeft}>
+                      <Ionicons
+                        name={showTreePreview ? 'chevron-down' : 'chevron-forward'}
+                        size={16}
+                        color={theme.subtext}
+                      />
+                      <Text style={[styles.treeToggleTitle, { color: theme.text }]}>
+                        Folder Hierarchy Preview ({currentInstance.scores.length} scores)
+                      </Text>
+                    </View>
+                    <Text style={[styles.treeToggleHint, { color: theme.tint }]}>
+                      {showTreePreview ? 'Hide' : 'View Tree'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {showTreePreview && (
+                    <View style={[styles.treePreviewBox, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+                      <Text style={[styles.treeRootName, { color: theme.text }]}>
+                        📁 {currentInstance.name}/
+                      </Text>
+                      {previewTree.map((item, idx) => (
+                        <View key={`${item.folder}-${item.filename}-${idx}`} style={styles.treeItemRow}>
+                          <Text style={[styles.treeIndent, { color: theme.subtext }]}>
+                            {idx === previewTree.length - 1 ? '└── ' : '├── '}
+                          </Text>
+                          <Text style={[styles.treeFolderPill, { color: theme.tint }]}>
+                            {item.folder}/
+                          </Text>
+                          <Text style={[styles.treeFileName, { color: theme.text }]} numberOfLines={1}>
+                            {item.filename}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
               )}
-              <Text style={[styles.actionButtonText, { color: Colors.status.failed }]}>
-                {isClearingCache ? 'Clearing...' : 'Clear Cache'}
+
+              {/* Offline Cache Stats & Quick Refresh */}
+              <View style={[styles.subStorageRow, { borderTopColor: theme.border }]}>
+                <View>
+                  <Text style={[styles.storageMetaText, { color: theme.subtext }]}>
+                    Internal Cache: {downloadedCount} of {totalScores} scores ({diskSizeMB} MB)
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.textActionBtn}
+                  onPress={handleClearCache}
+                  disabled={isClearingCache}>
+                  <Text style={[styles.textActionLabel, { color: Colors.status.failed }]}>
+                    {isClearingCache ? 'Clearing...' : 'Clear Cache'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Account Profile Section */}
+          {currentUser && (
+            <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={styles.sectionCardHeader}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="person-outline" size={17} color={theme.tint} />
+                  <Text style={[styles.sectionCardTitle, { color: theme.text }]}>Account</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={async () => {
+                    await signOutUser();
+                    router.push('/login');
+                  }}>
+                  <Text style={[styles.headerLink, { color: Colors.status.failed }]}>Sign Out</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.sectionBody}>
+                <View style={styles.accountRow}>
+                  <View style={[styles.avatar, { backgroundColor: theme.badgeBackground }]}>
+                    <Ionicons name="person" size={18} color={theme.tint} />
+                  </View>
+                  <View style={styles.accountInfo}>
+                    <Text style={[styles.accountName, { color: theme.text }]}>{currentUser.fullName}</Text>
+                    <Text style={[styles.accountEmail, { color: theme.subtext }]}>{currentUser.email}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* App Info & Update Section */}
+          <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={styles.sectionCardHeader}>
+              <View style={styles.sectionTitleRow}>
+                <Ionicons name="information-circle-outline" size={17} color={theme.tint} />
+                <Text style={[styles.sectionCardTitle, { color: theme.text }]}>Software & Updates</Text>
+              </View>
+              <Text style={[styles.versionText, { color: theme.subtext }]}>
+                v{UpdateService.currentVersion} ({UpdateService.currentBuildNumber})
               </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            </View>
 
-        {/* Software Updates Section */}
-        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <View style={[styles.cardHeader, { backgroundColor: 'transparent' }]}>
-            <Ionicons name="cloud-download-outline" size={20} color={theme.tint} style={{ marginRight: 8 }} />
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Software Updates</Text>
-          </View>
-          <Text style={[styles.sectionSub, { color: theme.subtext }]}>
-            Refertoire automatically scans for newer builds and notifies you when updates are ready.
-          </Text>
+            <View style={styles.sectionBody}>
+              <View style={styles.btnRow}>
+                <TouchableOpacity
+                  style={[styles.smallBtn, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, flex: 1 }]}
+                  onPress={handleCheckForUpdates}
+                  disabled={isCheckingUpdate}>
+                  <Ionicons name="refresh-outline" size={15} color={theme.text} style={{ marginRight: 5 }} />
+                  <Text style={[styles.smallBtnText, { color: theme.text }]}>
+                    {isCheckingUpdate ? 'Checking...' : updateCheckStatus || 'Check for Updates'}
+                  </Text>
+                </TouchableOpacity>
 
-          <View style={[styles.storageStatsRow, { backgroundColor: 'transparent' }]}>
-            <Text style={[styles.statText, { color: theme.text }]}>
-              Installed: v{UpdateService.currentVersion} (Build {UpdateService.currentBuildNumber})
-            </Text>
-            {updateCheckStatus && (
-              <Text style={[styles.statText, { color: updateCheckStatus.includes('New build') ? '#0D74CE' : Colors.status.completed }]}>
-                {updateCheckStatus}
-              </Text>
-            )}
-          </View>
+                {Platform.OS === 'web' && (
+                  <TouchableOpacity
+                    style={[styles.smallBtn, { backgroundColor: theme.tint, borderColor: theme.tint, flex: 1 }]}
+                    onPress={() => Linking.openURL('https://refertoire.github.io/apk/Refertoire.apk')}>
+                    <Ionicons name="logo-android" size={15} color="#FFFFFF" style={{ marginRight: 5 }} />
+                    <Text style={[styles.smallBtnText, { color: '#FFFFFF', fontWeight: '700' }]}>
+                      Get Android APK
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
-          <View style={[styles.buttonRow, { backgroundColor: 'transparent' }]}>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, flex: 1, justifyContent: 'center' },
-              ]}
-              onPress={handleCheckForUpdates}
-              disabled={isCheckingUpdate}>
-              {isCheckingUpdate ? (
-                <ActivityIndicator size="small" color={theme.tint} style={{ marginRight: 6 }} />
-              ) : (
-                <Ionicons name="refresh-outline" size={16} color={theme.text} style={{ marginRight: 6 }} />
+              {currentInstance && (
+                <TouchableOpacity
+                  style={[styles.disconnectBtn, { borderTopColor: theme.border }]}
+                  onPress={handleSignOut}
+                  disabled={isSigningOut}>
+                  <Ionicons name="log-out-outline" size={16} color={Colors.status.failed} style={{ marginRight: 6 }} />
+                  <Text style={[styles.disconnectText, { color: Colors.status.failed }]}>
+                    {isSigningOut ? 'Disconnecting...' : `Disconnect from ${currentInstance.code}`}
+                  </Text>
+                </TouchableOpacity>
               )}
-              <Text style={[styles.actionButtonText, { color: theme.text }]}>
-                {isCheckingUpdate ? 'Scanning for Updates...' : 'Check for Updates'}
-              </Text>
-            </TouchableOpacity>
-            {Platform.OS === 'web' && (
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  { backgroundColor: theme.tint, borderColor: theme.tint, marginLeft: 10, justifyContent: 'center' },
-                ]}
-                onPress={() => Linking.openURL('https://refertoire.github.io/apk/Refertoire.apk')}>
-                <Ionicons name="logo-android" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={[styles.actionButtonText, { color: '#FFFFFF', fontWeight: '700' }]}>
-                  Download APK
-                </Text>
-              </TouchableOpacity>
-            )}
+            </View>
           </View>
-        </View>
 
-        {/* Sign Out / Disconnect Button */}
-        {currentInstance && (
-          <TouchableOpacity
-            style={[
-              styles.signOutButton,
-              { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, opacity: isSigningOut ? 0.7 : 1 },
-            ]}
-            onPress={handleSignOut}
-            disabled={isSigningOut}>
-            {isSigningOut ? (
-              <ActivityIndicator size="small" color={Colors.status.failed} style={{ marginRight: 8 }} />
-            ) : (
-              <Ionicons name="log-out-outline" size={18} color={Colors.status.failed} style={{ marginRight: 8 }} />
-            )}
-            <Text style={[styles.signOutText, { color: Colors.status.failed }]}>
-              {isSigningOut ? 'Disconnecting...' : `Disconnect from ${currentInstance.code}`}
+          {/* Footer branding */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: theme.subtext }]}>
+              Refertoire • Ensemble Repertoire Sync
             </Text>
-          </TouchableOpacity>
-        )}
+          </View>
+        </ScrollView>
 
-        {/* Footer info */}
-        <View style={[styles.appFooter, { backgroundColor: 'transparent', alignItems: 'center' }]}>
-          <Image
-            source={require('@/assets/images/refertoire-logo.png')}
-            style={{ width: 48, height: 48, marginBottom: 8 }}
-            resizeMode="contain"
-          />
-          <Text style={[styles.appFooterText, { color: theme.subtext }]}>
-            Refertoire Ensemble Sync v{UpdateService.currentVersion}
-          </Text>
-          <Text style={[styles.appFooterSub, { color: theme.subtext }]}>
-            Built with Expo SDK 57 & React Native
-          </Text>
-        </View>
-      </ScrollView>
-
-      {/* Upload Modal (accessible by admin from settings as well) */}
-      <UploadScoreModal
-        file={pendingUploadFile}
-        onClose={() => setPendingUploadFile(null)}
-        onUpload={uploadScore}
-      />
-      {/* Ensemble Members Roster Modal */}
-      <EnsembleMembersModal
-        visible={showMembersModal}
-        onClose={() => setShowMembersModal(false)}
-      />
+        <EnsembleMembersModal
+          visible={showMembersModal}
+          onClose={() => setShowMembersModal(false)}
+        />
+        <UploadScoreModal
+          file={pendingUploadFile}
+          onClose={() => setPendingUploadFile(null)}
+          onUpload={uploadScore}
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  membersNavBtn: {
+  safeArea: {
+    flex: 1,
+  },
+  responsiveContainer: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  screenTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  screenSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  scrollContent: {
+    padding: 16,
+    gap: 16,
+    paddingBottom: 96,
+  },
+  sectionCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(150, 150, 150, 0.12)',
   },
-  membersNavLeft: {
+  sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  membersNavTitle: {
+  sectionCardTitle: {
     fontSize: 14,
     fontWeight: '700',
-    marginRight: 8,
+    letterSpacing: -0.1,
   },
-  memberCountBadge: {
+  headerLink: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statBadge: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  versionText: {
+    fontSize: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  sectionBody: {
+    padding: 16,
+    gap: 14,
+  },
+  ensembleTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ensembleName: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    flex: 1,
+  },
+  rolePill: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  memberCountText: {
-    fontSize: 11,
+  rolePillText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  ensembleMeta: {
+    fontSize: 12,
+    marginTop: -2,
+    opacity: 0.85,
+  },
+  codeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  codeLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  codeValue: {
+    fontSize: 18,
     fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 1,
+    marginTop: 2,
   },
-  userProfileRow: {
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  shareBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  actionRowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  actionRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  actionRowLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  actionRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  countText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  connectPrompt: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  connectPromptText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  storageBarBg: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  storageBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  storageSubText: {
+    fontSize: 12,
+    marginTop: -2,
+    opacity: 0.85,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  smallBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  smallBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  toggleInfo: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  toggleTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  toggleSub: {
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 16,
+    opacity: 0.8,
+  },
+  accountRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 8,
   },
-  userAvatar: {
+  avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  userName: {
-    fontSize: 15,
+  accountInfo: {
+    flex: 1,
+  },
+  accountName: {
+    fontSize: 14,
     fontWeight: '700',
   },
-  userEmail: {
+  accountEmail: {
     fontSize: 12,
     marginTop: 1,
   },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  screenTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  screenSub: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 16,
-  },
-  card: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 16,
-  },
-  switchCardRow: {
+  disconnectBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  cardHeader: {
+  disconnectText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  footerText: {
+    fontSize: 12,
+    opacity: 0.7,
+  },
+  syncStatusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  roleBadge: {
+    gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 20,
   },
-  roleBadgeText: {
-    fontSize: 12,
+  syncDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  syncStatusText: {
+    fontSize: 11,
     fontWeight: '700',
   },
-  switchLink: {
-    fontSize: 13,
+  linkedFolderBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  linkedFolderInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  linkedFolderLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  linkedFolderPath: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginTop: 2,
+  },
+  unlinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  unlinkText: {
+    fontSize: 12,
     fontWeight: '600',
   },
-  choirTitle: {
-    fontSize: 18,
+  unlinkedPromptBox: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 14,
+  },
+  unlinkedPromptLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  promptTitle: {
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 2,
   },
-  choirSubtext: {
-    fontSize: 13,
-    marginBottom: 12,
+  promptSub: {
+    fontSize: 12,
+    lineHeight: 17,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  infoLabel: {
-    fontSize: 13,
-  },
-  infoValue: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  infoCodeValue: {
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  adminBannerCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 16,
-  },
-  adminBannerHeader: {
+  primaryActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
+    justifyContent: 'center',
+    height: 48,
+    borderRadius: 12,
+    width: '100%',
+    shadowColor: '#C49746',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  adminBannerTitle: {
-    fontSize: 15,
+  primaryActionBtnText: {
+    color: '#0D0E12',
+    fontSize: 14,
     fontWeight: '700',
   },
-  adminBannerText: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
+  hierarchyModeContainer: {
+    gap: 8,
+    backgroundColor: 'transparent',
   },
-  codeDisplayBox: {
+  settingLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  modeSegmentedBar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 12,
+    padding: 3,
+    borderRadius: 10,
+    gap: 4,
   },
-  bigCodeText: {
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-  },
-  shareCodeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
+  modeSegmentBtn: {
+    flex: 1,
     paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 8,
   },
-  shareCodeBtnText: {
-    color: '#FFFFFF',
+  modeSegmentText: {
     fontSize: 12,
-    fontWeight: '700',
   },
-  adminUploadBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingVertical: 11,
+  syncActionArea: {
+    gap: 10,
+    backgroundColor: 'transparent',
   },
-  adminUploadBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
+  progressContainer: {
+    gap: 6,
+    backgroundColor: 'transparent',
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  sectionSub: {
-    fontSize: 12,
-    marginBottom: 12,
-  },
-  storageHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  storageBarBg: {
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  storageBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  storageStatsRow: {
+  progressHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  statText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
+    backgroundColor: 'transparent',
+  },
+  progressCurrentFile: {
+    fontSize: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    flex: 1,
+    marginRight: 8,
+  },
+  progressRatio: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  iosNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
     borderWidth: 1,
   },
-  actionButtonText: {
+  treeSection: {
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    backgroundColor: 'transparent',
+  },
+  treeToggleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  treeToggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+  },
+  treeToggleTitle: {
     fontSize: 13,
     fontWeight: '600',
   },
-  signOutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  signOutText: {
-    fontSize: 14,
+  treeToggleHint: {
+    fontSize: 12,
     fontWeight: '700',
   },
-  appFooter: {
-    alignItems: 'center',
-    paddingVertical: 20,
+  treePreviewBox: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 4,
   },
-  appFooterText: {
+  treeRootName: {
     fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginBottom: 4,
   },
-  appFooterSub: {
+  treeItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  treeIndent: {
     fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  treeFolderPill: {
+    fontSize: 11,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginRight: 4,
+  },
+  treeFileName: {
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    flex: 1,
+  },
+  subStorageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    backgroundColor: 'transparent',
+  },
+  storageMetaText: {
+    fontSize: 11,
+  },
+  textActionBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  textActionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

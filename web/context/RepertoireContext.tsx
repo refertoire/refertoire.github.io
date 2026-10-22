@@ -79,6 +79,144 @@ interface RepertoireContextValue {
 
 const RepertoireContext = createContext<RepertoireContextValue | undefined>(undefined);
 
+export const DEMO_ENSEMBLE: RepertoireInstance = {
+  code: 'CANTOR-4819',
+  name: 'Cathedral Choral Society',
+  director: 'Maestro Julian Cross',
+  subtitle: 'Masterwork Repertoire 2026',
+  seasonName: 'Lent & Easter Season',
+  createdDate: '2026-01-15T00:00:00.000Z',
+  lastUpdated: new Date().toISOString(),
+  setlists: [
+    {
+      id: 'set-1',
+      title: 'Lent Evensong Service',
+      date: '2026-03-29',
+      venue: 'St. Michael Cathedral',
+      description: 'Choral prelude and liturgical anthems',
+      scoreIds: ['score-1', 'score-3', 'score-6'],
+    },
+    {
+      id: 'set-2',
+      title: 'Easter Sunday Solemn Mass',
+      date: '2026-04-05',
+      venue: 'Cathedral Nave',
+      description: 'Full choir and organ festive mass',
+      scoreIds: ['score-2', 'score-5'],
+    },
+  ],
+  scores: [
+    {
+      id: 'score-1',
+      title: 'Ave Verum Corpus, K. 618',
+      composer: 'W. A. Mozart',
+      voicing: 'SATB',
+      season: 'Lent',
+      genre: 'Classical',
+      duration: '3:30',
+      pageCount: 3,
+      keySignature: 'D Major',
+      tempo: 'Adagio',
+      tags: ['Motet', 'Latin', 'Lent'],
+      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-ave-verum.pdf',
+      fileSize: 142000,
+      downloadStatus: 'completed',
+      addedAt: '2026-01-15T00:00:00.000Z',
+      isFavorite: true,
+    },
+    {
+      id: 'score-2',
+      title: 'Hallelujah Chorus (from Messiah)',
+      composer: 'G. F. Handel',
+      voicing: 'SATB',
+      season: 'Easter',
+      genre: 'Sacred',
+      duration: '4:15',
+      pageCount: 6,
+      keySignature: 'D Major',
+      tempo: 'Allegro',
+      tags: ['Oratorio', 'Easter', 'Anthem'],
+      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-hallelujah.pdf',
+      fileSize: 285000,
+      downloadStatus: 'completed',
+      addedAt: '2026-01-15T00:00:00.000Z',
+      isFavorite: true,
+    },
+    {
+      id: 'score-3',
+      title: 'Sicut Cervus',
+      composer: 'G. P. da Palestrina',
+      voicing: 'SATB',
+      season: 'Lent',
+      genre: 'Sacred',
+      duration: '3:10',
+      pageCount: 4,
+      keySignature: 'F Major',
+      tempo: 'Moderato',
+      tags: ['Renaissance', 'Polyphony'],
+      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-sicut-cervus.pdf',
+      fileSize: 198000,
+      downloadStatus: 'completed',
+      addedAt: '2026-01-16T00:00:00.000Z',
+      isFavorite: false,
+    },
+    {
+      id: 'score-4',
+      title: 'Bogoroditse Devo (All-Night Vigil)',
+      composer: 'S. Rachmaninoff',
+      voicing: 'SATB',
+      season: 'Christmas',
+      genre: 'Classical',
+      duration: '3:05',
+      pageCount: 4,
+      keySignature: 'F Major',
+      tempo: 'Andante',
+      tags: ['Orthodox', 'Vespers'],
+      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-bogoroditse.pdf',
+      fileSize: 210000,
+      downloadStatus: 'completed',
+      addedAt: '2026-01-18T00:00:00.000Z',
+      isFavorite: true,
+    },
+    {
+      id: 'score-5',
+      title: 'Cantate Domino',
+      composer: 'Claudio Monteverdi',
+      voicing: 'SSAA',
+      season: 'Concert',
+      genre: 'Classical',
+      duration: '2:45',
+      pageCount: 4,
+      keySignature: 'G Minor',
+      tempo: 'Vivace',
+      tags: ['Baroque', 'Concert'],
+      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-cantate.pdf',
+      fileSize: 184000,
+      downloadStatus: 'completed',
+      addedAt: '2026-01-20T00:00:00.000Z',
+      isFavorite: false,
+    },
+    {
+      id: 'score-6',
+      title: 'If Ye Love Me',
+      composer: 'Thomas Tallis',
+      voicing: 'SATB',
+      season: 'General',
+      genre: 'Sacred',
+      duration: '2:20',
+      pageCount: 2,
+      keySignature: 'F Major',
+      tempo: 'Lento',
+      tags: ['Tudor', 'Anthem'],
+      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-if-ye-love-me.pdf',
+      fileSize: 112000,
+      downloadStatus: 'completed',
+      addedAt: '2026-01-22T00:00:00.000Z',
+      isFavorite: false,
+    },
+  ],
+};
+
 export function RepertoireProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [currentInstance, setCurrentInstance] = useState<RepertoireInstance | null>(null);
@@ -210,6 +348,10 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
           } catch (e) {
             console.warn('Cross-device ensemble discovery notice:', e);
           }
+        } else {
+          // Default fallback demo ensemble for preview & offline exploration
+          setCurrentInstance(DEMO_ENSEMBLE);
+          setUserRole('admin');
         }
       } catch (err) {
         console.warn('Init session error:', err);
