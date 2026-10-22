@@ -943,30 +943,6 @@
       border-top: 1px solid var(--border-subtle);
     }
 
-    .version-legend {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: clamp(14px, 3vw, 24px);
-      margin-bottom: 36px;
-      padding: 12px 22px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      max-width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
     .version-dual-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -1083,9 +1059,11 @@
     }
 
     .ind-grey {
-      color: var(--text-tertiary);
-      background: rgba(100, 116, 139, 0.1);
-      border: 1px solid rgba(100, 116, 139, 0.25);
+      color: #94A3B8;
+      background: rgba(100, 116, 139, 0.12);
+      border: 1px solid rgba(100, 116, 139, 0.28);
+      font-size: 13px;
+      font-weight: 800;
     }
 
     .v-feat-info {
@@ -1213,42 +1191,35 @@
           <p class="section-sub">Two tailored builds designed for rehearsal needs. Standalone Android APK for tablets and phones, or the Web App for PC, Mac, and iOS users with hybrid disk sync.</p>
         </div>
 
-        <!-- Indicator Legend -->
-        <div class="version-legend" aria-label="Feature status legend">
-          <span class="legend-item"><span class="ind-icon ind-yellow" aria-hidden="true">✓</span> Supported</span>
-          <span class="legend-item"><span class="ind-icon ind-white" aria-hidden="true">–</span> Alternative approach</span>
-          <span class="legend-item"><span class="ind-icon ind-grey" aria-hidden="true">–</span> Not available</span>
-        </div>
-
         <div class="version-dual-grid">
           <!-- Left Column: Android APK -->
           <div class="version-card">
             <div class="version-card-header">
               <div class="version-pill">Android Phone & Tablet</div>
               <h3 class="version-card-title">Android APK</h3>
-              <p class="version-card-desc">Self-contained mobile app storing scores inside the app. Engineered for Android tablets and phones with 100% offline rehearsal reading.</p>
+              <p class="version-card-desc">Standalone native app for Android tablets and phones. Prompts you to pick your storage folder (on device storage or SD card), saving, referencing, and syncing all repertoire PDFs directly in that chosen folder for 100% offline rehearsal reading.</p>
             </div>
 
             <div class="version-features">
               <div class="v-feat-row">
                 <span class="ind-icon ind-yellow" title="Supported">✓</span>
                 <div class="v-feat-info">
-                  <span class="v-feat-name">App Storage</span>
-                  <span class="v-feat-sub">Scores stored inside app memory; self-contained and ready to open</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-grey" title="Not available">–</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Local File Storage</span>
-                  <span class="v-feat-sub">Does not manage files directly in device file explorer folders</span>
+                  <span class="v-feat-name">Pick Your Storage Folder</span>
+                  <span class="v-feat-sub">Prompt to select any folder on your device; app saves, references, and syncs PDFs directly in it</span>
                 </div>
               </div>
               <div class="v-feat-row">
                 <span class="ind-icon ind-yellow" title="Supported">✓</span>
                 <div class="v-feat-info">
-                  <span class="v-feat-name">100% Offline Reader</span>
-                  <span class="v-feat-sub">Native viewer with instant score rendering and zero reception dropouts</span>
+                  <span class="v-feat-name">Direct Local File Sync</span>
+                  <span class="v-feat-sub">Syncs sheet music PDFs straight into your selected directory without hiding files in an inaccessible sandbox</span>
+                </div>
+              </div>
+              <div class="v-feat-row">
+                <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                <div class="v-feat-info">
+                  <span class="v-feat-name">100% Offline Standalone Viewer</span>
+                  <span class="v-feat-sub">Native high-DPI viewer with instant score rendering, page flip turns, and stage dark mode</span>
                 </div>
               </div>
               <div class="v-feat-row">
@@ -1262,7 +1233,7 @@
                 <span class="ind-icon ind-white" title="Alternative approach">–</span>
                 <div class="v-feat-info">
                   <span class="v-feat-name">Third-Party Score Export</span>
-                  <span class="v-feat-sub">Share sheet export to send PDFs to external viewers</span>
+                  <span class="v-feat-sub">Open PDFs directly from your folder or via Android Share Sheet into external viewers</span>
                 </div>
               </div>
               <div class="v-feat-row">
@@ -1270,6 +1241,13 @@
                 <div class="v-feat-info">
                   <span class="v-feat-name">Direct APK Installation</span>
                   <span class="v-feat-sub">Direct sideload install; zero app store login or account needed</span>
+                </div>
+              </div>
+              <div class="v-feat-row">
+                <span class="ind-icon ind-grey" title="Not available">✕</span>
+                <div class="v-feat-info">
+                  <span class="v-feat-name">Zero-Install Browser Access</span>
+                  <span class="v-feat-sub">Requires APK installation on Android devices</span>
                 </div>
               </div>
             </div>
@@ -1289,29 +1267,29 @@
             <div class="version-card-header">
               <div class="version-pill version-pill-web">Desktop & iOS (PC, Mac, iPad, iPhone)</div>
               <h3 class="version-card-title">Web Version</h3>
-              <p class="version-card-desc">File manager sync agent and browser reader for PC, Mac, iPad, and iPhone. Updates your local file directory automatically whenever repertoire changes.</p>
+              <p class="version-card-desc">File manager sync agent and reader for PC, Mac, iPad, and iPhone. Prompts you to pick your storage folder, saving and referencing all repertoire PDFs directly in that chosen directory.</p>
             </div>
 
             <div class="version-features">
               <div class="v-feat-row">
-                <span class="ind-icon ind-grey" title="Not available">–</span>
+                <span class="ind-icon ind-yellow" title="Supported">✓</span>
                 <div class="v-feat-info">
-                  <span class="v-feat-name">App Storage</span>
-                  <span class="v-feat-sub">Browser-based environment; does not run inside a native APK sandbox</span>
+                  <span class="v-feat-name">Pick Your Storage Folder</span>
+                  <span class="v-feat-sub">Prompt to select your local or cloud folder via File System Access API; app saves and references all scores in your folder</span>
                 </div>
               </div>
               <div class="v-feat-row">
                 <span class="ind-icon ind-yellow" title="Supported">✓</span>
                 <div class="v-feat-info">
-                  <span class="v-feat-name">Local File Storage</span>
-                  <span class="v-feat-sub">Syncs choir hierarchy directly into your local hard drive or folder</span>
+                  <span class="v-feat-name">Direct Local File Sync</span>
+                  <span class="v-feat-sub">File System Access API mirrors the ensemble hierarchy directly into your selected hard drive or cloud folder</span>
                 </div>
               </div>
               <div class="v-feat-row">
                 <span class="ind-icon ind-white" title="Alternative approach">–</span>
                 <div class="v-feat-info">
-                  <span class="v-feat-name">100% Offline Reader</span>
-                  <span class="v-feat-sub">Offline capability via browser Service Worker cache and local folder access</span>
+                  <span class="v-feat-name">100% Offline Standalone Viewer</span>
+                  <span class="v-feat-sub">Offline capability via browser Service Worker cache and direct local folder access</span>
                 </div>
               </div>
               <div class="v-feat-row">
@@ -1325,14 +1303,21 @@
                 <span class="ind-icon ind-yellow" title="Supported">✓</span>
                 <div class="v-feat-info">
                   <span class="v-feat-name">Third-Party Score Export</span>
-                  <span class="v-feat-sub">Direct file dispatch into iOS Files, forScore, PiaScore, and cloud drives</span>
+                  <span class="v-feat-sub">Direct file dispatch into iOS Files, forScore, PiaScore, and desktop folders</span>
                 </div>
               </div>
               <div class="v-feat-row">
-                <span class="ind-icon ind-white" title="Alternative approach">–</span>
+                <span class="ind-icon ind-grey" title="Not available">✕</span>
                 <div class="v-feat-info">
                   <span class="v-feat-name">Direct APK Installation</span>
                   <span class="v-feat-sub">No APK installation; opens immediately in any standard modern browser</span>
+                </div>
+              </div>
+              <div class="v-feat-row">
+                <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                <div class="v-feat-info">
+                  <span class="v-feat-name">Zero-Install Browser Access</span>
+                  <span class="v-feat-sub">Opens instantly in Chrome, Safari, and Edge without installing packages</span>
                 </div>
               </div>
             </div>
@@ -1500,7 +1485,7 @@
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path><path d="m14 9 2 2"></path></svg>
             </div>
             <h3>1-Step Code Sync</h3>
-            <p>Connect your entire choir in seconds with a single 8-character ensemble access code. Instantly syncs the full repertoire manifest and caches all sheet music PDFs directly to local device storage. No passwords or account creation needed for singers.</p>
+            <p>Connect your entire choir in seconds with a single 8-character ensemble access code. Prompts singers to pick their preferred local folder, then saves, references, and caches all sheet music PDFs directly into that chosen directory for 100% offline access. No passwords or account creation needed for singers.</p>
           </div>
 
           <div class="feature-cell">
@@ -1532,10 +1517,10 @@
               <div class="feature-icon-wrap" style="margin-bottom: 0;" aria-hidden="true">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><polyline points="12 11 12 17 9 14"></polyline><polyline points="12 17 15 14"></polyline></svg>
               </div>
-              <span class="comparison-badge badge-after">Desktop Disk & iOS Files</span>
+              <span class="comparison-badge badge-after">Mobile & Web Local Folders</span>
             </div>
-            <h3 style="margin-top: 14px;">Local Directory Sync Agent (Web for PC & iOS)</h3>
-            <p>For PC and Mac users, the web application functions as an automated file manager sync agent, mirroring the choir's sheet music and folder hierarchy directly into your chosen local drive (Dropbox, iCloud, or hard disk). For iPad and iPhone users who cannot sideload APKs, export structured folder archives straight into the iOS Files app or dispatch scores into forScore and PiaScore in one click.</p>
+            <h3 style="margin-top: 14px;">User-Selected Folder Storage (Pick, Save & Reference Anywhere)</h3>
+            <p>Refertoire asks singers to pick a folder where the repertoire will be saved into. The app references and manages your sheet music PDFs directly from that chosen directory (on Android storage, or your PC and Mac hard drive, Dropbox, or iCloud), syncing files automatically whenever the director updates scores.</p>
           </div>
         </div>
       </div>

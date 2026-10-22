@@ -73,6 +73,9 @@ interface RepertoireContextValue {
   signOut: () => Promise<void>;
   reSyncAll: () => Promise<void>;
   toggleFavorite: (scoreId: string) => Promise<void>;
+  repertoireFolder: { uri: string | null; name: string | null };
+  pickRepertoireFolder: () => Promise<{ success: boolean; name?: string; error?: string }>;
+  clearRepertoireFolder: () => Promise<void>;
   clearOfflineCache: () => Promise<void>;
   purgeCleanSlate: () => Promise<void>;
 }
@@ -234,6 +237,10 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
   const [favorites, setFavorites] = useState<string[]>([]);
   const [preferredVoicePart, setPreferredVoicePartState] = useState<string | null>(null);
   const [isOfflineMode, setIsOfflineModeState] = useState<boolean>(false);
+  const [repertoireFolder, setRepertoireFolder] = useState<{ uri: string | null; name: string | null }>({
+    uri: null,
+    name: null,
+  });
 
   // Sorting & Filtering State
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -293,6 +300,13 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
         // 3. Restore offline mode preference
         const offlineModeStored = await StorageService.getOfflineMode();
         setIsOfflineModeState(offlineModeStored);
+
+        // 4. Restore user-picked repertoire storage folder
+        const folderUri = await StorageService.getRepertoireFolderUri();
+        const folderName = await StorageService.getRepertoireFolderName();
+        if (folderUri) {
+          setRepertoireFolder({ uri: folderUri, name: folderName });
+        }
 
         // 4. Restore active choir instance
         const activeCode = await StorageService.getActiveInstanceCode();
@@ -694,9 +708,36 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
     await StorageService.setPreferredVoicePart(part);
   };
 
+  // Pick user repertoire storage folder
+  const pickRepertoireFolder = useCallback(async () => {
+    try {
+      const res = await DownloadService.pickRepertoireFolder();
+      if (res) {
+        setRepertoireFolder(res);
+        if (currentInstance) {
+          syncScoresForInstance(currentInstance);
+        }
+        return { success: true, name: res.name };
+      }
+      return { success: false, error: 'No folder selected' };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Failed to select folder' };
+    }
+  }, [currentInstance, syncScoresForInstance]);
+
+  // Disconnect repertoire storage folder
+  const clearRepertoireFolder = useCallback(async () => {
+    await StorageService.setRepertoireFolderUri(null);
+    await StorageService.setRepertoireFolderName(null);
+    setRepertoireFolder({ uri: null, name: null });
+  }, []);
+
   // Clean slate purge
   const purgeCleanSlate = async () => {
     await DatabaseService.purgeCleanSlateDatabase();
+    await StorageService.setRepertoireFolderUri(null);
+    await StorageService.setRepertoireFolderName(null);
+    setRepertoireFolder({ uri: null, name: null });
     setCurrentInstance(null);
     setCurrentUser(null);
     setUserRole('member');
@@ -779,6 +820,9 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
         signOut,
         reSyncAll,
         toggleFavorite,
+        repertoireFolder,
+        pickRepertoireFolder,
+        clearRepertoireFolder,
         clearOfflineCache,
         purgeCleanSlate,
       }}>

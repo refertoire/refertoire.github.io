@@ -56,6 +56,8 @@ export default function RepertoireLibraryScreen() {
     deleteScore,
     uploadScore,
     reSyncAll,
+    repertoireFolder,
+    pickRepertoireFolder,
   } = useRepertoire();
 
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
@@ -327,6 +329,30 @@ export default function RepertoireLibraryScreen() {
         </View>
 
         <NetworkStatusBar />
+
+        {/* Repertoire Storage Folder Setup Banner */}
+        {!repertoireFolder.uri && (
+          <View style={[styles.folderBanner, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+            <View style={styles.folderBannerLeft}>
+              <View style={[styles.folderIconWrap, { backgroundColor: theme.badgeBackground }]}>
+                <Ionicons name="folder-open" size={17} color={theme.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.folderBannerTitle, { color: theme.text }]}>
+                  Pick your repertoire storage folder
+                </Text>
+                <Text style={[styles.folderBannerSub, { color: theme.subtext }]}>
+                  Choose where Refertoire saves, references, and syncs your scores.
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[styles.folderBannerBtn, { backgroundColor: theme.tint }]}
+              onPress={pickRepertoireFolder}>
+              <Text style={styles.folderBannerBtnText}>Pick Folder</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Search & Filter Bar */}
         <View style={styles.searchBarRow}>
@@ -908,6 +934,51 @@ const styles = StyleSheet.create({
   fabText: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '700',
+  },
+  folderBanner: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  folderBannerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  folderIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  folderBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  folderBannerSub: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  folderBannerBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  folderBannerBtnText: {
+    color: '#0D0E12',
+    fontSize: 13,
     fontWeight: '700',
   },
 });
