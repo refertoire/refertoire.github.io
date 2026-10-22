@@ -23,10 +23,11 @@ import * as DocumentPicker from 'expo-document-picker';
 import UploadScoreModal, { SelectedPdfFile } from '@/components/UploadScoreModal';
 import NetworkStatusBar from '@/components/NetworkStatusBar';
 import { NetworkService } from '@/services/networkService';
+import { HybridSyncService } from '@/services/hybridSyncService';
 
 const VOICING_FILTERS: Array<Voicing | 'ALL'> = ['ALL', 'SATB', 'SSAA', 'TTBB', 'SAB'];
-const SEASON_FILTERS: Array<LiturgicalSeason | 'ALL'> = ['ALL', 'Lent', 'Holy Week', 'Christmas', 'Concert', 'Evensong', 'General'];
-const GENRE_FILTERS: Array<PieceGenre | 'ALL'> = ['ALL', 'Folk', 'Pop', 'Classical', 'Sacred', 'Contemporary', 'Jazz', 'Spiritual'];
+const SEASON_FILTERS: Array<LiturgicalSeason | 'ALL'> = ['ALL', 'Lent', 'Holy Week', 'Christmas', 'Concert', 'General'];
+const GENRE_FILTERS: Array<PieceGenre | 'ALL'> = ['ALL', 'Classical', 'Sacred', 'Contemporary', 'Folk', 'Pop'];
 
 export default function RepertoireLibraryScreen() {
   const colorScheme = useColorScheme();
@@ -51,7 +52,6 @@ export default function RepertoireLibraryScreen() {
     favoritesOnly,
     setFavoritesOnly,
     isOfflineMode,
-    setOfflineMode,
     toggleFavorite,
     deleteScore,
     uploadScore,
@@ -61,11 +61,14 @@ export default function RepertoireLibraryScreen() {
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [pendingUploadFile, setPendingUploadFile] = useState<SelectedPdfFile | null>(null);
 
+  const hasActiveFilters =
+    voicingFilter !== 'ALL' || seasonFilter !== 'ALL' || genreFilter !== 'ALL' || favoritesOnly;
+
   const handlePickScoreFile = async () => {
     if (isOfflineMode || !NetworkService.isOnline()) {
       Alert.alert(
         'Upload Unavailable',
-        'You can only upload sheet music while in online mode with an active internet connection. Please disable Offline Mode in settings.'
+        'Uploading scores requires an active network connection. Disable Offline Mode to upload.'
       );
       return;
     }
@@ -98,39 +101,40 @@ export default function RepertoireLibraryScreen() {
     };
 
     if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm(`Delete "${score.title}" from this ensemble repertoire?`)) {
+      if (typeof window !== 'undefined' && window.confirm(`Remove "${score.title}" from this ensemble?`)) {
         confirmDelete();
       }
     } else {
       Alert.alert(
-        'Delete Score',
-        `Are you sure you want to permanently remove "${score.title}" from this ensemble?`,
+        'Remove Score',
+        `Remove "${score.title}" from the ensemble repertoire?`,
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Delete', style: 'destructive', onPress: confirmDelete },
+          { text: 'Remove', style: 'destructive', onPress: confirmDelete },
         ]
       );
     }
   };
 
-  // If no instance loaded, show welcome empty state
   if (!isLoading && !currentInstance) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <View style={[styles.emptyContainer, { backgroundColor: 'transparent' }]}>
-          <View style={[styles.emptyIconCircle, { backgroundColor: theme.surfaceSubtle }]}>
-            <Ionicons name="musical-notes-outline" size={54} color={theme.tint} />
+        <View style={styles.responsiveContainer}>
+          <View style={styles.emptyContainer}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: theme.surfaceSubtle }]}>
+              <Ionicons name="musical-notes-outline" size={44} color={theme.tint} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>No Choir Connected</Text>
+            <Text style={[styles.emptyText, { color: theme.subtext }]}>
+              Enter your ensemble access code to sync repertoire and sheet music offline.
+            </Text>
+            <TouchableOpacity
+              style={[styles.primaryButton, { backgroundColor: theme.tint }]}
+              onPress={() => router.push('/login')}>
+              <Ionicons name="key-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.primaryButtonText}>Join with Access Code</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>No Choir Connected</Text>
-          <Text style={[styles.emptyText, { color: theme.subtext }]}>
-            Sign in with a choir access code or create a new ensemble repertoire group.
-          </Text>
-          <TouchableOpacity
-            style={[styles.primaryButton, { backgroundColor: theme.tint }]}
-            onPress={() => router.push('/login')}>
-            <Ionicons name="key-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Text style={styles.primaryButtonText}>Join or Create Group</Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -149,98 +153,113 @@ export default function RepertoireLibraryScreen() {
     return (
       <TouchableOpacity
         style={[
-          styles.scoreCard,
+          styles.scoreItem,
           { backgroundColor: theme.card, borderColor: theme.border },
         ]}
         onPress={() => router.push({ pathname: '/score/[id]', params: { id: item.id } })}
-        activeOpacity={0.7}>
-        <View style={styles.scoreCardRow}>
-          <View style={[styles.scoreCardContent, { backgroundColor: 'transparent', flex: 1 }]}>
-            {/* Top Row: Voicing, Season & Status */}
-            <View style={[styles.metaRow, { backgroundColor: 'transparent' }]}>
-              <View style={styles.badgesGroup}>
-                <View style={[styles.voicingBadge, { backgroundColor: voicingBg }]}>
-                  <Text style={[styles.voicingText, { color: voicingTextColor }]}>
-                    {item.voicing}
-                  </Text>
-                </View>
+        activeOpacity={0.72}>
+        <View style={styles.scoreItemMain}>
+          {/* Metadata pill row */}
+          <View style={styles.metaRow}>
+            <View style={styles.badgesGroup}>
+              <View style={[styles.voicingBadge, { backgroundColor: voicingBg }]}>
+                <Text style={[styles.voicingText, { color: voicingTextColor }]}>
+                  {item.voicing}
+                </Text>
+              </View>
+              {item.season && item.season !== 'General' && (
                 <View style={[styles.seasonBadge, { backgroundColor: theme.surfaceSubtle }]}>
                   <Text style={[styles.seasonText, { color: theme.subtext }]}>{item.season}</Text>
                 </View>
-                {item.genre && (
-                  <View style={[styles.genreBadge, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
-                    <Text style={[styles.genreText, { color: theme.tint }]}>{item.genre}</Text>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.statusGroup}>
-                {item.downloadStatus === 'completed' ? (
-                  <View style={styles.downloadedPill}>
-                    <Ionicons name="checkmark-circle" size={14} color={Colors.status.completed} />
-                    <Text style={styles.downloadedPillText}>Offline</Text>
-                  </View>
-                ) : item.downloadStatus === 'downloading' ? (
-                  <ActivityIndicator size="small" color={theme.tint} />
-                ) : (
-                  <Ionicons name="cloud-outline" size={16} color={theme.subtext} />
-                )}
-              </View>
+              )}
+              {item.genre && (
+                <Text style={[styles.genreLabel, { color: theme.subtext }]}>{item.genre}</Text>
+              )}
             </View>
 
-            {/* Title and Composer */}
-            <Text style={[styles.scoreTitle, { color: theme.text }]} numberOfLines={2}>
-              {item.title}
-            </Text>
-            <Text style={[styles.scoreComposer, { color: theme.subtext }]}>
-              {item.composer}
-              {item.arranger ? ` • arr. ${item.arranger}` : ''}
-            </Text>
-
-            {/* Bottom details (Key, Pages) */}
-            <View style={[styles.footerRow, { backgroundColor: 'transparent' }]}>
-              <View style={styles.footerDetail}>
-                <Ionicons name="document-text-outline" size={13} color={theme.subtext} />
-                <Text style={[styles.footerText, { color: theme.subtext }]}>
-                  {item.pageCount} {item.pageCount === 1 ? 'page' : 'pages'}
-                </Text>
-              </View>
-
-              {item.keySignature && (
-                <View style={styles.footerDetail}>
-                  <Ionicons name="musical-note-outline" size={13} color={theme.subtext} />
-                  <Text style={[styles.footerText, { color: theme.subtext }]}>
-                    {item.keySignature}
-                  </Text>
+            <View style={styles.statusGroup}>
+              {item.downloadStatus === 'completed' ? (
+                <View style={styles.offlineIndicator}>
+                  <Ionicons name="checkmark-circle" size={13} color={Colors.status.completed} />
+                  <Text style={styles.offlineText}>Offline</Text>
                 </View>
+              ) : item.downloadStatus === 'downloading' ? (
+                <ActivityIndicator size="small" color={theme.tint} />
+              ) : (
+                <Ionicons name="cloud-outline" size={15} color={theme.subtext} />
               )}
             </View>
           </View>
 
-          {/* Right Actions Column: Favorite on Top, Delete Score Below */}
-          <View style={styles.cardActionsColumn}>
-            <TouchableOpacity
-              onPress={() => toggleFavorite(item.id)}
-              hitSlop={{ top: 8, bottom: 6, left: 8, right: 8 }}
-              style={styles.actionIconButton}
-              accessibilityLabel={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}>
-              <Ionicons
-                name={item.isFavorite ? 'star' : 'star-outline'}
-                size={22}
-                color={item.isFavorite ? '#F59E0B' : theme.subtext}
-              />
-            </TouchableOpacity>
+          {/* Title & Composer */}
+          <Text style={[styles.scoreTitle, { color: theme.text }]} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={[styles.scoreComposer, { color: theme.subtext }]} numberOfLines={1}>
+            {item.composer}
+            {item.arranger ? ` • arr. ${item.arranger}` : ''}
+          </Text>
 
-            {userRole === 'admin' && (
-              <TouchableOpacity
-                onPress={() => handleDeleteScore(item)}
-                hitSlop={{ top: 6, bottom: 8, left: 8, right: 8 }}
-                style={[styles.actionIconButton, styles.deleteActionBtn]}
-                accessibilityLabel={`Delete score ${item.title}`}>
-                <Ionicons name="trash-outline" size={17} color="#EF4444" />
-              </TouchableOpacity>
+          {/* Bottom details */}
+          <View style={styles.footerRow}>
+            <View style={styles.footerDetail}>
+              <Ionicons name="document-text-outline" size={12} color={theme.subtext} />
+              <Text style={[styles.footerText, { color: theme.subtext }]}>
+                {item.pageCount} {item.pageCount === 1 ? 'page' : 'pages'}
+              </Text>
+            </View>
+
+            {item.keySignature && (
+              <View style={styles.footerDetail}>
+                <Ionicons name="musical-note-outline" size={12} color={theme.subtext} />
+                <Text style={[styles.footerText, { color: theme.subtext }]}>
+                  {item.keySignature}
+                </Text>
+              </View>
+            )}
+
+            {item.tempo && (
+              <View style={styles.footerDetail}>
+                <Ionicons name="speedometer-outline" size={12} color={theme.subtext} />
+                <Text style={[styles.footerText, { color: theme.subtext }]}>
+                  {item.tempo}
+                </Text>
+              </View>
             )}
           </View>
+        </View>
+
+        {/* Action icons column */}
+        <View style={styles.itemActions}>
+          <TouchableOpacity
+            onPress={() => toggleFavorite(item.id)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.actionBtn}
+            accessibilityLabel={item.isFavorite ? 'Remove favorite' : 'Add favorite'}>
+            <Ionicons
+              name={item.isFavorite ? 'star' : 'star-outline'}
+              size={20}
+              color={item.isFavorite ? '#F59E0B' : theme.subtext}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => HybridSyncService.openInSheetMusicApp(item)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.actionBtn}
+            accessibilityLabel={`Open or share ${item.title} in sheet music app`}>
+            <Ionicons name="share-outline" size={17} color={theme.subtext} />
+          </TouchableOpacity>
+
+          {userRole === 'admin' && (
+            <TouchableOpacity
+              onPress={() => handleDeleteScore(item)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={[styles.actionBtn, styles.deleteBtn]}
+              accessibilityLabel={`Delete score ${item.title}`}>
+              <Ionicons name="trash-outline" size={16} color="#EF4444" />
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -248,327 +267,282 @@ export default function RepertoireLibraryScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      {/* App & Choir Header */}
-      <View style={[styles.header, { borderBottomColor: theme.border }]}>
-        <Image
-          source={require('@/assets/images/refertoire-logo.png')}
-          style={{ width: 42, height: 42, marginRight: 10, alignSelf: 'center' }}
-          resizeMode="contain"
-        />
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-          <View style={[styles.titleBadgeRow, { backgroundColor: 'transparent' }]}>
-            <Text style={[styles.choirName, { color: theme.text }]} numberOfLines={1}>
-              {currentInstance?.name || 'Refertoire'}
-            </Text>
-            <View
-              style={[
-                styles.rolePill,
-                { backgroundColor: userRole === 'admin' ? theme.badgeBackground : theme.surfaceSubtle },
-              ]}>
-              <Text
+      <View style={styles.responsiveContainer}>
+        {/* Compact Ensemble Header */}
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+          <Image
+            source={require('@/assets/images/refertoire-logo.png')}
+            style={styles.logoImg}
+            resizeMode="contain"
+          />
+          <View style={styles.headerInfo}>
+            <View style={styles.titleRow}>
+              <Text style={[styles.choirName, { color: theme.text }]} numberOfLines={1}>
+                {currentInstance?.name || 'Refertoire'}
+              </Text>
+              <View
                 style={[
-                  styles.rolePillText,
-                  { color: userRole === 'admin' ? theme.badgeText : theme.subtext },
+                  styles.roleBadge,
+                  { backgroundColor: userRole === 'admin' ? theme.badgeBackground : theme.surfaceSubtle },
                 ]}>
-                {userRole === 'admin' ? '👑 Admin' : '👤 Member'}
+                <Text
+                  style={[
+                    styles.roleBadgeText,
+                    { color: userRole === 'admin' ? theme.badgeText : theme.subtext },
+                  ]}>
+                  {userRole === 'admin' ? 'Admin' : 'Member'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.choirMetaRow}>
+              <Text style={[styles.choirMeta, { color: theme.subtext }]} numberOfLines={1}>
+                {currentInstance?.scores.length ?? 0} {currentInstance?.scores.length === 1 ? 'score' : 'scores'}
+              </Text>
+              <Text style={[styles.metaDivider, { color: theme.border }]}>•</Text>
+              <Text style={[styles.codeLabel, { color: theme.subtext }]}>Code:</Text>
+              <Text style={[styles.codeText, { color: theme.tint }]}>
+                {currentInstance?.code || '------'}
               </Text>
             </View>
           </View>
 
-          <Text style={[styles.choirSub, { color: theme.subtext }]}>
-            {currentInstance?.director} • Code: {currentInstance?.code} • {currentInstance?.scores.length ?? 0} Scores
-          </Text>
-        </View>
-
-        <View style={styles.headerRightActions}>
           <TouchableOpacity
-            style={[styles.syncBadge, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
+            style={[styles.syncButton, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
             onPress={() => reSyncAll()}
             disabled={isSyncing}>
             {isSyncing ? (
               <>
-                <ActivityIndicator size="small" color={theme.tint} style={{ marginRight: 6 }} />
-                <Text style={[styles.syncBadgeText, { color: theme.tint }]}>
-                  {syncProgress
-                    ? `${syncProgress.completedFiles}/${syncProgress.totalFiles}`
-                    : 'Syncing...'}
+                <ActivityIndicator size="small" color={theme.tint} style={{ marginRight: 5 }} />
+                <Text style={[styles.syncText, { color: theme.tint }]}>
+                  {syncProgress ? `${syncProgress.completedFiles}/${syncProgress.totalFiles}` : 'Syncing'}
                 </Text>
               </>
             ) : (
               <>
-                <Ionicons
-                  name="cloud-done-outline"
-                  size={16}
-                  color={Colors.status.completed}
-                  style={{ marginRight: 4 }}
-                />
-                <Text style={[styles.syncBadgeText, { color: Colors.status.completed }]}>
-                  Synced
-                </Text>
+                <Ionicons name="checkmark-circle-outline" size={15} color={Colors.status.completed} style={{ marginRight: 4 }} />
+                <Text style={[styles.syncText, { color: Colors.status.completed }]}>Synced</Text>
               </>
             )}
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Network Connectivity Status Banner (Thin banner below the bar of account & code details) */}
-      <NetworkStatusBar />
+        <NetworkStatusBar />
 
-      {/* Search Bar & Filter Toggle */}
-      <View style={[styles.searchSection, { backgroundColor: 'transparent' }]}>
-        <View
-          style={[
-            styles.searchBar,
-            { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
-          ]}>
-          <Ionicons name="search" size={18} color={theme.subtext} style={{ marginRight: 8 }} />
-          <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search titles, composers, tags..."
-            placeholderTextColor={theme.subtext}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={theme.subtext} />
-            </TouchableOpacity>
-          )}
+        {/* Search & Filter Bar */}
+        <View style={styles.searchBarRow}>
+          <View
+            style={[
+              styles.searchBar,
+              { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
+            ]}>
+            <Ionicons name="search" size={17} color={theme.subtext} style={{ marginRight: 8 }} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search title, composer, tags..."
+              placeholderTextColor={theme.subtext}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={18} color={theme.subtext} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.filterToggleBtn,
+              {
+                backgroundColor: hasActiveFilters || showFilterDrawer ? theme.badgeBackground : theme.surfaceSubtle,
+                borderColor: hasActiveFilters ? theme.tint : theme.border,
+              },
+            ]}
+            onPress={() => setShowFilterDrawer(!showFilterDrawer)}>
+            <Ionicons
+              name="options-outline"
+              size={18}
+              color={hasActiveFilters || showFilterDrawer ? theme.tint : theme.subtext}
+            />
+            {hasActiveFilters && <View style={[styles.filterActiveDot, { backgroundColor: theme.tint }]} />}
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.filterToggleBtn,
-            {
-              backgroundColor:
-                showFilterDrawer || favoritesOnly || voicingFilter !== 'ALL' || seasonFilter !== 'ALL'
-                  ? theme.badgeBackground
-                  : theme.surfaceSubtle,
-              borderColor: theme.border,
-            },
-          ]}
-          onPress={() => setShowFilterDrawer(!showFilterDrawer)}>
-          <Ionicons
-            name="options-outline"
-            size={20}
-            color={
-              showFilterDrawer || favoritesOnly || voicingFilter !== 'ALL' || seasonFilter !== 'ALL'
-                ? theme.tint
-                : theme.subtext
-            }
-          />
-        </TouchableOpacity>
-      </View>
+        {/* Collapsible Filter & Sort Drawer */}
+        {showFilterDrawer && (
+          <View style={[styles.filterDrawer, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            {/* Voicing Pills */}
+            <View style={styles.filterGroup}>
+              <Text style={[styles.filterHeading, { color: theme.subtext }]}>VOICING</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+                {VOICING_FILTERS.map(v => {
+                  const isSel = voicingFilter === v;
+                  return (
+                    <TouchableOpacity
+                      key={v}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: isSel ? theme.tint : theme.surfaceSubtle,
+                          borderColor: isSel ? theme.tint : theme.border,
+                        },
+                      ]}
+                      onPress={() => setVoicingFilter(v)}>
+                      <Text style={[styles.chipText, { color: isSel ? '#FFFFFF' : theme.text }]}>
+                        {v}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
 
-      {/* Quick Genre Filter Scroll Chips */}
-      <View style={[styles.genreScrollWrapper, { backgroundColor: 'transparent' }]}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.genreScrollContent}>
-          {GENRE_FILTERS.map(g => {
-            const isSelected = genreFilter === g;
-            return (
-              <TouchableOpacity
-                key={g}
-                style={[
-                  styles.genreFilterChip,
-                  isSelected
-                    ? { backgroundColor: theme.tint, borderColor: theme.tint }
-                    : { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
-                ]}
-                onPress={() => setGenreFilter(g)}>
-                <Text
-                  style={[
-                    styles.genreFilterChipText,
-                    { color: isSelected ? '#FFFFFF' : theme.text, fontWeight: isSelected ? '700' : '500' },
-                  ]}>
-                  {g === 'ALL' ? 'All Genres' : g}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+            {/* Season Pills */}
+            <View style={styles.filterGroup}>
+              <Text style={[styles.filterHeading, { color: theme.subtext }]}>SEASON</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+                {SEASON_FILTERS.map(s => {
+                  const isSel = seasonFilter === s;
+                  return (
+                    <TouchableOpacity
+                      key={s}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: isSel ? theme.tint : theme.surfaceSubtle,
+                          borderColor: isSel ? theme.tint : theme.border,
+                        },
+                      ]}
+                      onPress={() => setSeasonFilter(s)}>
+                      <Text style={[styles.chipText, { color: isSel ? '#FFFFFF' : theme.text }]}>
+                        {s}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
 
-      {/* Collapsible Filter Bar (Voicing, Season, Favorites) */}
-      {showFilterDrawer && (
-        <View
-          style={[
-            styles.drawerContainer,
-            { backgroundColor: theme.card, borderBottomColor: theme.border },
-          ]}>
-          {/* Voicing Filter Pills */}
-          <Text style={[styles.filterGroupTitle, { color: theme.subtext }]}>VOICING</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillScroll}>
-            {VOICING_FILTERS.map(v => (
+            {/* Sort & Favorites Action Row */}
+            <View style={styles.filterActionsRow}>
               <TouchableOpacity
-                key={v}
                 style={[
-                  styles.filterPill,
+                  styles.chip,
                   {
-                    backgroundColor: voicingFilter === v ? theme.tint : theme.surfaceSubtle,
+                    backgroundColor: favoritesOnly ? theme.tint : theme.surfaceSubtle,
+                    borderColor: favoritesOnly ? theme.tint : theme.border,
+                    flexDirection: 'row',
+                    alignItems: 'center',
                   },
                 ]}
-                onPress={() => setVoicingFilter(v)}>
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    { color: voicingFilter === v ? '#FFFFFF' : theme.text },
-                  ]}>
-                  {v}
+                onPress={() => setFavoritesOnly(!favoritesOnly)}>
+                <Ionicons
+                  name={favoritesOnly ? 'star' : 'star-outline'}
+                  size={14}
+                  color={favoritesOnly ? '#FFFFFF' : theme.text}
+                  style={{ marginRight: 5 }}
+                />
+                <Text style={[styles.chipText, { color: favoritesOnly ? '#FFFFFF' : theme.text }]}>
+                  Favorites
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
 
-          {/* Season Filter Pills */}
-          <Text style={[styles.filterGroupTitle, { color: theme.subtext, marginTop: 10 }]}>
-            SEASON / OCCASION
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillScroll}>
-            {SEASON_FILTERS.map(s => (
-              <TouchableOpacity
-                key={s}
-                style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor: seasonFilter === s ? theme.tint : theme.surfaceSubtle,
-                  },
-                ]}
-                onPress={() => setSeasonFilter(s)}>
-                <Text
+              {hasActiveFilters && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setVoicingFilter('ALL');
+                    setSeasonFilter('ALL');
+                    setGenreFilter('ALL');
+                    setFavoritesOnly(false);
+                  }}>
+                  <Text style={[styles.resetText, { color: theme.tint }]}>Reset Filters</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Quick Sort Bar */}
+        <View style={styles.sortBar}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortContent}>
+            <Text style={[styles.sortLabel, { color: theme.subtext }]}>Sort:</Text>
+            {SORT_OPTIONS.map(opt => {
+              const isSel = sortOption.field === opt.field;
+              return (
+                <TouchableOpacity
+                  key={opt.field}
                   style={[
-                    styles.filterPillText,
-                    { color: seasonFilter === s ? '#FFFFFF' : theme.text },
-                  ]}>
-                  {s}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                    styles.sortPill,
+                    {
+                      backgroundColor: isSel ? theme.badgeBackground : theme.surfaceSubtle,
+                      borderColor: isSel ? theme.tint : 'transparent',
+                    },
+                  ]}
+                  onPress={() => setSortOption(opt)}>
+                  <Text
+                    style={[
+                      styles.sortPillText,
+                      { color: isSel ? theme.tint : theme.subtext, fontWeight: isSel ? '700' : '500' },
+                    ]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
+        </View>
 
-          {/* Favorites Only Toggle */}
-          <View style={[styles.favToggleRow, { backgroundColor: 'transparent' }]}>
-            <TouchableOpacity
-              style={[
-                styles.favFilterChip,
-                {
-                  backgroundColor: favoritesOnly ? theme.tint : theme.surfaceSubtle,
-                },
-              ]}
-              onPress={() => setFavoritesOnly(!favoritesOnly)}>
-              <Ionicons
-                name={favoritesOnly ? 'star' : 'star-outline'}
-                size={16}
-                color={favoritesOnly ? '#FFFFFF' : theme.text}
-                style={{ marginRight: 6 }}
-              />
-              <Text
-                style={[
-                  styles.filterPillText,
-                  { color: favoritesOnly ? '#FFFFFF' : theme.text },
-                ]}>
-                Favorites Only
+        {/* Scores List */}
+        <FlatList
+          data={filteredAndSortedScores}
+          keyExtractor={item => item.id}
+          renderItem={renderScoreItem}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyList}>
+              <Ionicons name="musical-notes-outline" size={40} color={theme.subtext} />
+              <Text style={[styles.emptyListTitle, { color: theme.text }]}>
+                {currentInstance?.scores.length === 0 ? 'No Scores Added' : 'No Matching Scores'}
               </Text>
-            </TouchableOpacity>
+              <Text style={[styles.emptyListSub, { color: theme.subtext }]}>
+                {currentInstance?.scores.length === 0
+                  ? userRole === 'admin'
+                    ? 'Upload the first score PDF to start syncing.'
+                    : 'The director has not uploaded scores yet.'
+                  : 'Try adjusting your search query or filters.'}
+              </Text>
 
-            {(voicingFilter !== 'ALL' || seasonFilter !== 'ALL' || favoritesOnly) && (
-              <TouchableOpacity
-                onPress={() => {
-                  setVoicingFilter('ALL');
-                  setSeasonFilter('ALL');
-                  setFavoritesOnly(false);
-                }}>
-                <Text style={[styles.clearFilterText, { color: theme.tint }]}>Reset Filters</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      )}
+              {userRole === 'admin' && currentInstance?.scores.length === 0 && (
+                <TouchableOpacity
+                  style={[styles.primaryButton, { backgroundColor: theme.tint, marginTop: 14 }]}
+                  onPress={handlePickScoreFile}>
+                  <Ionicons name="cloud-upload-outline" size={17} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Text style={styles.primaryButtonText}>Upload PDF</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          }
+        />
 
-      {/* Sorting Selector Chips */}
-      <View style={[styles.sortSection, { backgroundColor: 'transparent' }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sortScroll}>
-          <Text style={[styles.sortLabel, { color: theme.subtext }]}>Sort by:</Text>
-          {SORT_OPTIONS.map(opt => {
-            const isSelected = sortOption.field === opt.field;
-            return (
-              <TouchableOpacity
-                key={opt.field}
-                style={[
-                  styles.sortChip,
-                  {
-                    backgroundColor: isSelected ? theme.badgeBackground : theme.surfaceSubtle,
-                    borderColor: isSelected ? theme.tint : 'transparent',
-                  },
-                ]}
-                onPress={() => setSortOption(opt)}>
-                <Text
-                  style={[
-                    styles.sortChipText,
-                    { color: isSelected ? theme.tint : theme.subtext, fontWeight: isSelected ? '700' : '500' },
-                  ]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        {/* Admin Upload FAB */}
+        {userRole === 'admin' && (
+          <TouchableOpacity
+            style={[styles.fab, { backgroundColor: theme.tint }]}
+            onPress={handlePickScoreFile}
+            activeOpacity={0.85}>
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+            <Text style={styles.fabText}>Upload PDF</Text>
+          </TouchableOpacity>
+        )}
+
+        <UploadScoreModal
+          file={pendingUploadFile}
+          onClose={() => setPendingUploadFile(null)}
+          onUpload={uploadScore}
+        />
       </View>
-
-      {/* Scores FlatList */}
-      <FlatList
-        data={filteredAndSortedScores}
-        keyExtractor={item => item.id}
-        renderItem={renderScoreItem}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={[styles.emptyList, { backgroundColor: 'transparent' }]}>
-            <Ionicons name="musical-notes-outline" size={48} color={theme.subtext} />
-            <Text style={[styles.emptyListTitle, { color: theme.text }]}>
-              {currentInstance?.scores.length === 0
-                ? 'Repertoire is Currently Empty'
-                : 'No Matching Scores'}
-            </Text>
-            <Text style={[styles.emptyListSub, { color: theme.subtext }]}>
-              {currentInstance?.scores.length === 0
-                ? userRole === 'admin'
-                  ? 'Your group is ready! As group director, tap below to upload the first sheet music PDF for your singers.'
-                  : 'The music director has not uploaded any scores to this repertoire yet.'
-                : 'Try adjusting your search query or removing active filters.'}
-            </Text>
-
-            {userRole === 'admin' && currentInstance?.scores.length === 0 && (
-              <TouchableOpacity
-                style={[styles.primaryButton, { backgroundColor: theme.tint, marginTop: 16 }]}
-                onPress={handlePickScoreFile}>
-                <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                <Text style={styles.primaryButtonText}>Upload First Score (PDF)</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        }
-      />
-
-      {/* Admin Floating Action Button (FAB) to Upload PDF */}
-      {userRole === 'admin' && (
-        <TouchableOpacity
-          style={[styles.fabButton, { backgroundColor: theme.tint }]}
-          onPress={handlePickScoreFile}
-          activeOpacity={0.8}>
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-          <Text style={styles.fabText}>Upload PDF</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* PDF Upload Modal (Only opens after choosing a file) */}
-      <UploadScoreModal
-        file={pendingUploadFile}
-        onClose={() => setPendingUploadFile(null)}
-        onUpload={uploadScore}
-      />
     </SafeAreaView>
   );
 }
@@ -577,104 +551,94 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  responsiveContainer: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 10,
   },
-  titleBadgeRow: {
+  logoImg: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   choirName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: -0.2,
   },
-  rolePill: {
-    paddingHorizontal: 8,
+  roleBadge: {
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 5,
   },
-  rolePillText: {
-    fontSize: 11,
+  roleBadgeText: {
+    fontSize: 10,
     fontWeight: '700',
   },
-  choirSub: {
-    fontSize: 12,
+  choirMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginTop: 2,
   },
-  headerRightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  choirMeta: {
+    fontSize: 12,
   },
-  modePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
+  metaDivider: {
+    fontSize: 10,
   },
-  modePillText: {
+  codeLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
   },
-  syncBadge: {
+  codeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 0.5,
+  },
+  syncButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
   },
-  syncBadgeText: {
+  syncText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  searchSection: {
+  searchBarRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 6,
-    gap: 8,
-  },
-  genreScrollWrapper: {
     paddingBottom: 8,
-  },
-  genreScrollContent: {
-    paddingHorizontal: 16,
-    gap: 6,
-  },
-  genreFilterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  genreFilterChipText: {
-    fontSize: 12,
-  },
-  genreBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  genreText: {
-    fontSize: 10,
-    fontWeight: '700',
+    gap: 10,
+    alignItems: 'center',
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 42,
+    height: 44,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -682,130 +646,117 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
+    height: 44,
   },
   filterToggleBtn: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
-  drawerContainer: {
+  filterActiveDot: {
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  filterDrawer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 12,
   },
-  filterGroupTitle: {
-    fontSize: 10,
+  filterGroup: {
+    gap: 6,
+  },
+  filterHeading: {
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.8,
-    marginBottom: 6,
+    letterSpacing: 0.6,
   },
-  pillScroll: {
-    flexDirection: 'row',
-    marginBottom: 4,
+  chipsRow: {
+    gap: 8,
+    paddingVertical: 2,
   },
-  filterPill: {
+  chip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
-    marginRight: 8,
+    borderRadius: 10,
+    borderWidth: 1,
   },
-  filterPillText: {
+  chipText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  favToggleRow: {
+  filterActionsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  favFilterChip: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingTop: 4,
   },
-  clearFilterText: {
+  resetText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  sortSection: {
+  sortBar: {
     paddingVertical: 8,
   },
-  sortScroll: {
+  sortContent: {
     paddingHorizontal: 16,
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   sortLabel: {
     fontSize: 12,
     fontWeight: '600',
-    marginRight: 4,
+    marginRight: 2,
   },
-  sortChip: {
-    paddingHorizontal: 10,
+  sortPill: {
+    paddingHorizontal: 11,
     paddingVertical: 5,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
   },
-  sortChipText: {
+  sortPillText: {
     fontSize: 12,
   },
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 80,
+    paddingBottom: 96,
     gap: 12,
   },
-  scoreCard: {
+  scoreItem: {
+    flexDirection: 'row',
     borderRadius: 16,
     borderWidth: 1,
-    padding: 14,
+    padding: 16,
+    alignItems: 'center',
+    gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  scoreCardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    gap: 10,
+  scoreItemMain: {
+    flex: 1,
   },
-  cardActionsColumn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingLeft: 8,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: 'rgba(150, 150, 150, 0.25)',
-    backgroundColor: 'transparent',
-  },
-  actionIconButton: {
-    padding: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteActionBtn: {
-    backgroundColor: '#EF444415',
-  },
-  scoreCardContent: {},
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   badgesGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   voicingBadge: {
     paddingHorizontal: 8,
@@ -825,42 +776,40 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
-  statusGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  downloadedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  downloadedPillText: {
-    color: Colors.status.completed,
+  genreLabel: {
     fontSize: 11,
     fontWeight: '600',
   },
-  starButton: {
-    padding: 2,
+  statusGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  offlineIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  offlineText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.status.completed,
   },
   scoreTitle: {
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 22,
-    marginBottom: 4,
+    letterSpacing: -0.3,
+    marginBottom: 2,
   },
   scoreComposer: {
     fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 10,
+    marginBottom: 8,
+    opacity: 0.85,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(150, 150, 150, 0.15)',
-    paddingTop: 8,
   },
   footerDetail: {
     flexDirection: 'row',
@@ -869,31 +818,46 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 11,
+    fontWeight: '500',
+  },
+  itemActions: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingLeft: 4,
+  },
+  actionBtn: {
+    padding: 8,
+    borderRadius: 8,
+  },
+  deleteBtn: {
+    backgroundColor: '#EF444415',
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    padding: 24,
   },
   emptyIconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
+    lineHeight: 20,
+    maxWidth: 300,
+    marginBottom: 20,
   },
   primaryButton: {
     flexDirection: 'row',
@@ -904,7 +868,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
   emptyList: {
@@ -923,27 +887,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     maxWidth: 280,
-    lineHeight: 18,
+    lineHeight: 20,
   },
-  fabButton: {
+  fab: {
     position: 'absolute',
     bottom: 24,
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
     elevation: 6,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
     gap: 6,
   },
   fabText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
 });
