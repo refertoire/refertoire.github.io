@@ -1027,6 +1027,34 @@
       letter-spacing: 0;
     }
 
+    .th-role-tag {
+      font-size: 11.5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-top: 8px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.01em;
+    }
+
+    .th-role-app {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--gold);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .th-role-web {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .cell-diff-muted {
+      color: var(--text-tertiary);
+    }
+
     .btn-th-action {
       width: 100%;
       max-width: 220px;
@@ -1206,26 +1234,28 @@
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">Choose Your Version</h2>
-          <p class="section-sub">Two tailored builds designed for rehearsal needs. Standalone Android APK for tablets and phones, or the Web App for PC, Mac, and iOS users with hybrid disk sync.</p>
+          <p class="section-sub">The Web version focuses on syncing and sorting files in your computer directory. The Android app does the same, while also serving as a dedicated stage viewer and uploading tool for rehearsals.</p>
         </div>
 
-                        <div class="version-table-card">
+                                <div class="version-table-card">
           <div class="version-table-scroller">
             <table class="version-table">
               <thead>
                 <tr class="tr-head-title-row">
                   <th class="th-feat-col" rowspan="2">
-                    <div class="th-feat-head-title">Features</div>
-                    <div class="th-feat-head-sub">Rehearsal &amp; Sync</div>
+                    <div class="th-feat-head-title">Comparison</div>
+                    <div class="th-feat-head-sub">App vs. Web Capabilities</div>
                   </th>
                   <th class="th-platform-col">
                     <div class="th-platform-title">Android APK</div>
+                    <div class="th-role-tag th-role-app">Viewer • Uploader • File Sync</div>
                   </th>
                   <th class="th-platform-col">
                     <div class="th-platform-title">
                       <span>Web Version</span>
                       <span class="version-title-sub">for iOS and Desktops</span>
                     </div>
+                    <div class="th-role-tag th-role-web">Directory Sync &amp; Sorting</div>
                   </th>
                 </tr>
                 <tr class="tr-head-btn-row">
@@ -1246,103 +1276,120 @@
               <tbody>
                 <tr>
                   <td class="td-feature">
-                    <span class="tbl-feat-name">Choose Your Music Folder</span>
+                    <span class="tbl-feat-name">Primary Role</span>
                   </td>
                   <td class="td-platform">
                     <div class="cell-status-wrap">
                       <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Pick any folder on your device</span>
+                      <span class="cell-main">Stage viewer, uploader &amp; folder sync</span>
                     </div>
                   </td>
                   <td class="td-platform">
                     <div class="cell-status-wrap">
                       <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Pick any folder on your computer</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="td-feature">
-                    <span class="tbl-feat-name">Automatic Song Sync</span>
-                  </td>
-                  <td class="td-platform">
-                    <div class="cell-status-wrap">
-                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Keeps your sheet music up to date</span>
-                    </div>
-                  </td>
-                  <td class="td-platform">
-                    <div class="cell-status-wrap">
-                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Keeps your sheet music up to date</span>
+                      <span class="cell-main">Sync &amp; sort files in your directory</span>
                     </div>
                   </td>
                 </tr>
                 <tr>
                   <td class="td-feature">
-                    <span class="tbl-feat-name">Works Without Internet</span>
+                    <span class="tbl-feat-name">Sync Scores to Local Folder</span>
                   </td>
                   <td class="td-platform">
                     <div class="cell-status-wrap">
                       <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">100% offline during rehearsals</span>
+                      <span class="cell-main">Saves directly into your device folder</span>
                     </div>
                   </td>
                   <td class="td-platform">
                     <div class="cell-status-wrap">
                       <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Works offline once opened</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="td-feature">
-                    <span class="tbl-feat-name">Hands-Free Page Turns</span>
-                  </td>
-                  <td class="td-platform">
-                    <div class="cell-status-wrap">
-                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Turn pages with wireless foot pedals</span>
-                    </div>
-                  </td>
-                  <td class="td-platform">
-                    <div class="cell-status-wrap">
-                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Turn pages with wireless foot pedals</span>
+                      <span class="cell-main">Saves directly into your computer folder</span>
                     </div>
                   </td>
                 </tr>
                 <tr>
                   <td class="td-feature">
-                    <span class="tbl-feat-name">Open in Other Apps</span>
+                    <span class="tbl-feat-name">Organize &amp; Sort Pieces</span>
                   </td>
                   <td class="td-platform">
                     <div class="cell-status-wrap">
                       <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Open in forScore or any PDF app</span>
+                      <span class="cell-main">Sorts by voice parts (SATB) &amp; seasons</span>
                     </div>
                   </td>
                   <td class="td-platform">
                     <div class="cell-status-wrap">
                       <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Open in Files or any PDF app</span>
+                      <span class="cell-main">Sorts by voice parts (SATB) &amp; seasons</span>
                     </div>
                   </td>
                 </tr>
                 <tr>
                   <td class="td-feature">
-                    <span class="tbl-feat-name">How to Access</span>
+                    <span class="tbl-feat-name">Built-in Sheet Music Viewer</span>
                   </td>
                   <td class="td-platform">
                     <div class="cell-status-wrap">
                       <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Direct app download for Android</span>
+                      <span class="cell-main">Dedicated stage reader with page turns</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-grey" title="Not available">✕</span>
+                      <span class="cell-main cell-diff-muted">Syncs files only (view in system reader)</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Upload &amp; Manage Pieces</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Upload new scores directly for choir</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-grey" title="Not available">✕</span>
+                      <span class="cell-main cell-diff-muted">Sync only (uploading is done in app)</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Wireless Foot Pedal Turns</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Hands-free page turns on stage</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-grey" title="Not available">✕</span>
+                      <span class="cell-main cell-diff-muted">Not supported in directory sync</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Best Suited For</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Android tablets &amp; phones (rehearsals)</span>
                     </div>
                   </td>
                   <td class="td-platform">
                     <div class="cell-status-wrap">
                       <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                      <span class="cell-main">Instant access in any browser</span>
+                      <span class="cell-main">PC, Mac, iPad local directory manager</span>
                     </div>
                   </td>
                 </tr>
