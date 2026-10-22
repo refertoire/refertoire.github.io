@@ -51,16 +51,14 @@ export default function SetlistsScreen() {
     };
 
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        `Delete program "${program.title}"?\n\nThis will remove the program folder.`
-      );
+      const confirmed = window.confirm(`Delete program "${program.title}"?`);
       if (confirmed) {
         doDelete();
       }
     } else {
       Alert.alert(
         'Delete Program',
-        `Are you sure you want to delete "${program.title}"?`,
+        `Delete program "${program.title}"?`,
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Delete', style: 'destructive', onPress: doDelete },
@@ -83,30 +81,30 @@ export default function SetlistsScreen() {
         ]}>
         {/* Setlist Header */}
         <TouchableOpacity
-          style={[styles.setlistHeader, { backgroundColor: 'transparent' }]}
+          style={styles.setlistHeader}
           onPress={() => setExpandedSetlistId(isExpanded ? null : item.id)}
-          activeOpacity={0.7}>
-          <View style={[styles.folderIconBadge, { backgroundColor: theme.surfaceSubtle }]}>
-            <Ionicons name={isExpanded ? 'folder-open' : 'folder'} size={22} color={theme.tint} />
+          activeOpacity={0.72}>
+          <View style={[styles.folderBadge, { backgroundColor: theme.surfaceSubtle }]}>
+            <Ionicons name={isExpanded ? 'folder-open' : 'folder'} size={20} color={theme.tint} />
           </View>
 
-          <View style={{ flex: 1, backgroundColor: 'transparent', marginLeft: 12 }}>
-            <View style={[styles.titleRow, { backgroundColor: 'transparent' }]}>
-              <Text style={[styles.setlistTitle, { color: theme.text }]}>{item.title}</Text>
-            </View>
+          <View style={styles.headerTitleWrap}>
+            <Text style={[styles.setlistTitle, { color: theme.text }]} numberOfLines={1}>
+              {item.title}
+            </Text>
 
             {(item.date || item.venue) && (
-              <View style={[styles.dateRow, { backgroundColor: 'transparent' }]}>
+              <View style={styles.metaRow}>
                 {item.date && (
-                  <View style={[styles.metaPill, { backgroundColor: 'transparent' }]}>
-                    <Ionicons name="calendar-outline" size={12} color={theme.tint} />
-                    <Text style={[styles.setDate, { color: theme.tint }]}>{item.date}</Text>
+                  <View style={styles.metaItem}>
+                    <Ionicons name="calendar-outline" size={11} color={theme.tint} />
+                    <Text style={[styles.metaText, { color: theme.tint }]}>{item.date}</Text>
                   </View>
                 )}
                 {item.venue && (
-                  <View style={[styles.metaPill, { backgroundColor: 'transparent' }]}>
-                    <Ionicons name="location-outline" size={12} color={theme.subtext} />
-                    <Text style={[styles.setVenue, { color: theme.subtext }]}>{item.venue}</Text>
+                  <View style={styles.metaItem}>
+                    <Ionicons name="location-outline" size={11} color={theme.subtext} />
+                    <Text style={[styles.metaText, { color: theme.subtext }]}>{item.venue}</Text>
                   </View>
                 )}
               </View>
@@ -119,64 +117,51 @@ export default function SetlistsScreen() {
             )}
           </View>
 
-          <View style={[styles.headerRight, { backgroundColor: 'transparent' }]}>
+          <View style={styles.headerRight}>
             <View style={[styles.countBadge, { backgroundColor: theme.surfaceSubtle }]}>
-              <Text style={[styles.countBadgeText, { color: theme.text }]}>
+              <Text style={[styles.countText, { color: theme.text }]}>
                 {item.scoreIds.length} {item.scoreIds.length === 1 ? 'score' : 'scores'}
               </Text>
             </View>
             <Ionicons
               name={isExpanded ? 'chevron-up' : 'chevron-down'}
-              size={20}
+              size={18}
               color={theme.subtext}
             />
           </View>
         </TouchableOpacity>
 
-        {/* Expanded Score Order & Admin Program Controls */}
+        {/* Expanded Sequence */}
         {isExpanded && (
-          <View style={[styles.scoresOrderList, { borderTopColor: theme.border }]}>
-            {/* Admin Action Bar */}
+          <View style={[styles.expandedContent, { borderTopColor: theme.border }]}>
             {userRole === 'admin' && (
               <View style={[styles.adminActionsRow, { borderBottomColor: theme.border }]}>
                 <TouchableOpacity
-                  style={[styles.editProgramBtn, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
+                  style={[styles.editBtn, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
                   onPress={() => handleOpenEditModal(item)}>
-                  <Ionicons name="create-outline" size={14} color={theme.text} style={{ marginRight: 4 }} />
-                  <Text style={[styles.editProgramBtnText, { color: theme.text }]}>Edit Program</Text>
+                  <Ionicons name="create-outline" size={13} color={theme.text} style={{ marginRight: 4 }} />
+                  <Text style={[styles.editBtnText, { color: theme.text }]}>Edit Program</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.deleteProgramBtn, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}
+                  style={styles.deleteBtn}
                   onPress={() => handleDeleteProgram(item)}>
-                  <Ionicons name="trash-outline" size={14} color="#DC2626" style={{ marginRight: 4 }} />
-                  <Text style={styles.deleteProgramBtnText}>Delete Program</Text>
+                  <Ionicons name="trash-outline" size={13} color="#DC2626" style={{ marginRight: 4 }} />
+                  <Text style={styles.deleteBtnText}>Delete</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            <View style={[styles.sectionHeadingRow, { backgroundColor: 'transparent' }]}>
-              <Text style={[styles.orderHeader, { color: theme.subtext }]}>
-                PERFORMANCE REPERTOIRE SEQUENCE:
-              </Text>
-              {setlistScores.length > 0 && (
-                <Text style={[styles.scoresCountSummary, { color: theme.tint }]}>
-                  {setlistScores.length} pieces in folder
-                </Text>
-              )}
-            </View>
-
             {setlistScores.length === 0 ? (
-              <View style={[styles.emptyScoresNotice, { backgroundColor: theme.surfaceSubtle }]}>
-                <Ionicons name="musical-notes-outline" size={24} color={theme.subtext} style={{ marginBottom: 4 }} />
-                <Text style={[styles.emptyScoresText, { color: theme.subtext }]}>
-                  No pieces added to this program folder yet.
+              <View style={styles.emptyFolderNotice}>
+                <Text style={[styles.emptyFolderText, { color: theme.subtext }]}>
+                  No pieces added to this program yet.
                 </Text>
                 {userRole === 'admin' && (
                   <TouchableOpacity
-                    style={[styles.addScoresQuickBtn, { backgroundColor: theme.tint }]}
+                    style={[styles.addPiecesBtn, { backgroundColor: theme.tint }]}
                     onPress={() => handleOpenEditModal(item)}>
-                    <Text style={styles.addScoresQuickBtnText}>Add Pieces from Repertoire</Text>
+                    <Text style={styles.addPiecesBtnText}>Add Scores</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -195,43 +180,33 @@ export default function SetlistsScreen() {
                 return (
                   <TouchableOpacity
                     key={score.id}
-                    style={[
-                      styles.orderItem,
-                      { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
-                    ]}
+                    style={[styles.sequenceRow, { borderBottomColor: theme.border }]}
                     onPress={() =>
                       router.push({ pathname: '/score/[id]', params: { id: score.id } })
-                    }>
-                    <View style={[styles.orderIndexBadge, { backgroundColor: theme.badgeBackground }]}>
-                      <Text style={[styles.orderIndexText, { color: theme.badgeText }]}>
+                    }
+                    activeOpacity={0.7}>
+                    <View style={[styles.sequenceNum, { backgroundColor: theme.surfaceSubtle }]}>
+                      <Text style={[styles.sequenceNumText, { color: theme.tint }]}>
                         {index + 1}
                       </Text>
                     </View>
 
-                    <View style={{ flex: 1, backgroundColor: 'transparent', marginLeft: 10 }}>
-                      <Text style={[styles.orderScoreTitle, { color: theme.text }]} numberOfLines={1}>
+                    <View style={styles.sequenceInfo}>
+                      <Text style={[styles.sequenceTitle, { color: theme.text }]} numberOfLines={1}>
                         {score.title}
                       </Text>
-                      <Text style={[styles.orderScoreComposer, { color: theme.subtext }]}>
+                      <Text style={[styles.sequenceComposer, { color: theme.subtext }]} numberOfLines={1}>
                         {score.composer}
                       </Text>
                     </View>
 
-                    <View style={[styles.orderRight, { backgroundColor: 'transparent' }]}>
-                      {score.genre && (
-                        <View style={[styles.miniGenreBadge, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                          <Text style={[styles.miniGenreText, { color: theme.tint }]}>
-                            {score.genre}
-                          </Text>
-                        </View>
-                      )}
-
+                    <View style={styles.sequenceRight}>
                       <View style={[styles.miniVoicingBadge, { backgroundColor: voicingBg }]}>
                         <Text style={[styles.miniVoicingText, { color: voicingTextColor }]}>
                           {score.voicing}
                         </Text>
                       </View>
-                      <Ionicons name="chevron-forward" size={16} color={theme.subtext} />
+                      <Ionicons name="chevron-forward" size={14} color={theme.subtext} />
                     </View>
                   </TouchableOpacity>
                 );
@@ -245,64 +220,65 @@ export default function SetlistsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      {/* Screen Header with Admin Create Button */}
-      <View style={[styles.header, { borderBottomColor: theme.border }]}>
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-          <Text style={[styles.screenTitle, { color: theme.text }]}>Concert Programs</Text>
-          <Text style={[styles.screenSub, { color: theme.subtext }]}>
-            Ordered service folders & performance sequences
-          </Text>
+      <View style={styles.responsiveContainer}>
+        {/* Screen Header */}
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+          <View style={styles.headerTextWrap}>
+            <Text style={[styles.screenTitle, { color: theme.text }]}>Programs</Text>
+            <Text style={[styles.screenSub, { color: theme.subtext }]}>
+              Ordered rehearsal & performance folders
+            </Text>
+          </View>
+
+          {userRole === 'admin' && (
+            <TouchableOpacity
+              style={[styles.createBtn, { backgroundColor: theme.tint }]}
+              onPress={handleOpenCreateModal}>
+              <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+              <Text style={styles.createBtnText}>New Program</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {userRole === 'admin' && (
-          <TouchableOpacity
-            style={[styles.createProgramBtn, { backgroundColor: theme.tint }]}
-            onPress={handleOpenCreateModal}>
-            <Ionicons name="add" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
-            <Text style={styles.createProgramBtnText}>New Program</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        <NetworkStatusBar />
 
-      <NetworkStatusBar />
-
-      <FlatList
-        data={setlists}
-        keyExtractor={item => item.id}
-        renderItem={renderSetlistItem}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={[styles.emptyContainer, { backgroundColor: 'transparent' }]}>
-            <Ionicons name="folder-open-outline" size={52} color={theme.subtext} />
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>No Programs Created Yet</Text>
-            <Text style={[styles.emptyText, { color: theme.subtext }]}>
-              {userRole === 'admin'
-                ? 'Create a concert or rehearsal program folder and arrange the performance order of your pieces.'
-                : 'The director has not configured any concert program folders yet.'}
-            </Text>
-            {userRole === 'admin' && (
-              <TouchableOpacity
-                style={[styles.emptyCreateBtn, { backgroundColor: theme.tint }]}
-                onPress={handleOpenCreateModal}>
-                <Ionicons name="add-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={styles.emptyCreateBtnText}>Create First Program</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        }
-      />
-
-      {/* Program Editor Modal */}
-      <ProgramEditorModal
-        visible={modalVisible}
-        programToEdit={editingProgram}
-        onClose={() => setModalVisible(false)}
-        onSaved={() => {
-          if (editingProgram) {
-            setExpandedSetlistId(editingProgram.id);
+        <FlatList
+          data={setlists}
+          keyExtractor={item => item.id}
+          renderItem={renderSetlistItem}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="folder-open-outline" size={44} color={theme.subtext} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>No Programs Created</Text>
+              <Text style={[styles.emptyText, { color: theme.subtext }]}>
+                {userRole === 'admin'
+                  ? 'Create a program folder to set the rehearsal or concert sequence.'
+                  : 'The director has not configured any program folders yet.'}
+              </Text>
+              {userRole === 'admin' && (
+                <TouchableOpacity
+                  style={[styles.emptyCreateBtn, { backgroundColor: theme.tint }]}
+                  onPress={handleOpenCreateModal}>
+                  <Ionicons name="add-circle-outline" size={17} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Text style={styles.emptyCreateBtnText}>Create Program</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           }
-        }}
-      />
+        />
+
+        <ProgramEditorModal
+          visible={modalVisible}
+          programToEdit={editingProgram}
+          onClose={() => setModalVisible(false)}
+          onSaved={() => {
+            if (editingProgram) {
+              setExpandedSetlistId(editingProgram.id);
+            }
+          }}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -311,216 +287,216 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  responsiveContainer: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'space-between',
+  },
+  headerTextWrap: {
+    flex: 1,
   },
   screenTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   screenSub: {
-    fontSize: 13,
+    fontSize: 12,
     marginTop: 2,
   },
-  createProgramBtn: {
+  createBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
-  createProgramBtnText: {
+  createBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
   },
   listContent: {
     padding: 16,
-    gap: 14,
+    gap: 12,
+    paddingBottom: 96,
   },
   setlistCard: {
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   setlistHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
+    gap: 12,
   },
-  folderIconBadge: {
-    width: 44,
-    height: 44,
+  folderBadge: {
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  titleRow: {
-    marginBottom: 4,
+  headerTitleWrap: {
+    flex: 1,
   },
   setlistTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 4,
   },
-  dateRow: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 4,
+    flexWrap: 'wrap',
   },
-  metaPill: {
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  setDate: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  setVenue: {
-    fontSize: 12,
+  metaText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
   setDescription: {
-    fontSize: 13,
+    fontSize: 12,
+    marginTop: 4,
     lineHeight: 18,
-    marginTop: 2,
+    opacity: 0.85,
   },
   headerRight: {
-    alignItems: 'flex-end',
-    gap: 6,
-    marginLeft: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
   },
   countBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  countBadgeText: {
+  countText: {
     fontSize: 11,
     fontWeight: '600',
   },
-  scoresOrderList: {
+  expandedContent: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    padding: 14,
-    backgroundColor: 'rgba(0,0,0,0.02)',
   },
   adminActionsRow: {
     flexDirection: 'row',
-    gap: 8,
-    paddingBottom: 10,
-    marginBottom: 10,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 10,
   },
-  editProgramBtn: {
+  editBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 7,
-    borderWidth: 1,
-  },
-  editProgramBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  deleteProgramBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 7,
-    borderWidth: 1,
-  },
-  deleteProgramBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#DC2626',
-  },
-  sectionHeadingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  orderHeader: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  scoresCountSummary: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  emptyScoresNotice: {
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyScoresText: {
-    fontSize: 12,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  addScoresQuickBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
+    borderWidth: 1,
   },
-  addScoresQuickBtnText: {
-    color: '#FFFFFF',
+  editBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  orderItem: {
+  deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#EF444415',
   },
-  orderIndexBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  deleteBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
+  emptyFolderNotice: {
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  orderIndexText: {
-    fontSize: 12,
+  emptyFolderText: {
+    fontSize: 13,
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  addPiecesBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  addPiecesBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: '700',
   },
-  orderScoreTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+  sequenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 12,
   },
-  orderScoreComposer: {
+  sequenceNum: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sequenceNumText: {
     fontSize: 12,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
-  orderRight: {
+  sequenceInfo: {
+    flex: 1,
+  },
+  sequenceTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  sequenceComposer: {
+    fontSize: 12,
+    marginTop: 2,
+    opacity: 0.8,
+  },
+  sequenceRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  miniGenreBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  miniGenreText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
   miniVoicingBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 5,
   },
   miniVoicingText: {
     fontSize: 10,
@@ -529,11 +505,11 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 64,
+    paddingVertical: 56,
     paddingHorizontal: 24,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     marginTop: 12,
     marginBottom: 6,
@@ -542,15 +518,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     maxWidth: 280,
-    lineHeight: 18,
+    lineHeight: 20,
+    marginBottom: 20,
   },
   emptyCreateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   emptyCreateBtnText: {
     color: '#FFFFFF',

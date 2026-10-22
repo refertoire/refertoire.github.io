@@ -1,5 +1,6 @@
-import { StatusBar } from 'expo-status-bar';
+import React from 'react';
 import { Platform, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View } from '@/components/Themed';
@@ -14,73 +15,110 @@ export default function InfoModalScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Image
-          source={require('@/assets/images/refertoire-logo.png')}
-          style={styles.modalLogo}
-          resizeMode="contain"
-        />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Header Branding */}
+        <View style={styles.headerBlock}>
+          <Image
+            source={require('@/assets/images/refertoire-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={[styles.title, { color: theme.text }]}>Refertoire Guide</Text>
+          <Text style={[styles.subtitle, { color: theme.subtext }]}>
+            Ensemble Repertoire & Sheet Music Sync Engine
+          </Text>
+        </View>
 
-        <Text style={[styles.subtitle, { color: theme.subtext }]}>
-          Choir Repertoire & Sheet Music Sync Engine
-        </Text>
-
+        {/* Active Ensemble Summary */}
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <Text style={[styles.sectionHeading, { color: theme.text }]}>Active Choir Instance</Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="people-outline" size={16} color={theme.tint} />
+            <Text style={[styles.cardHeading, { color: theme.subtext }]}>Active Ensemble</Text>
+          </View>
           {currentInstance ? (
-            <>
-              <Text style={[styles.cardHighlight, { color: theme.tint }]}>
+            <View style={styles.detailList}>
+              <Text style={[styles.ensembleName, { color: theme.text }]}>
                 {currentInstance.name}
               </Text>
-              <Text style={[styles.cardDetail, { color: theme.subtext }]}>
-                Code: {currentInstance.code}
-              </Text>
-              <Text style={[styles.cardDetail, { color: theme.subtext }]}>
-                Director: {currentInstance.director}
-              </Text>
-              <Text style={[styles.cardDetail, { color: theme.subtext }]}>
-                Scores: {currentInstance.scores.length} works synced
-              </Text>
-            </>
+              
+              <View style={[styles.codeBadge, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+                <Ionicons name="key-outline" size={13} color={theme.tint} />
+                <Text style={[styles.codeText, { color: theme.tint }]}>
+                  {currentInstance.code}
+                </Text>
+              </View>
+
+              <View style={styles.metaRow}>
+                <Ionicons name="person-outline" size={13} color={theme.subtext} />
+                <Text style={[styles.detailText, { color: theme.subtext }]}>
+                  Director: {currentInstance.director}
+                </Text>
+              </View>
+
+              <View style={styles.metaRow}>
+                <Ionicons name="library-outline" size={13} color={theme.subtext} />
+                <Text style={[styles.detailText, { color: theme.subtext }]}>
+                  Library: {currentInstance.scores.length} scores synced
+                </Text>
+              </View>
+            </View>
           ) : (
-            <Text style={[styles.cardDetail, { color: theme.subtext }]}>
-              No choir currently connected. Enter your choir access code to load scores.
+            <Text style={[styles.detailText, { color: theme.subtext }]}>
+              No ensemble connected. Enter your choir access code in settings to sync scores.
             </Text>
           )}
         </View>
 
+        {/* How It Works List */}
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <Text style={[styles.sectionHeading, { color: theme.text }]}>How Refer-toire Works</Text>
-          <View style={[styles.stepRow, { backgroundColor: 'transparent' }]}>
-            <Ionicons name="key-outline" size={18} color={theme.tint} />
-            <Text style={[styles.stepText, { color: theme.text }]}>
-              Sign in with your ensemble's unique access code.
-            </Text>
+          <View style={styles.cardHeader}>
+            <Ionicons name="information-circle-outline" size={16} color={theme.tint} />
+            <Text style={[styles.cardHeading, { color: theme.subtext }]}>Quick Overview</Text>
           </View>
-          <View style={[styles.stepRow, { backgroundColor: 'transparent' }]}>
-            <Ionicons name="cloud-download-outline" size={18} color={theme.tint} />
-            <Text style={[styles.stepText, { color: theme.text }]}>
-              All PDF scores in that instance automatically download to your device storage.
-            </Text>
+
+          <View style={styles.stepItem}>
+            <View style={[styles.stepBadge, { backgroundColor: theme.surfaceSubtle }]}>
+              <Ionicons name="key-outline" size={16} color={theme.tint} />
+            </View>
+            <View style={styles.stepTextContainer}>
+              <Text style={[styles.stepTitle, { color: theme.text }]}>Pair with Code</Text>
+              <Text style={[styles.stepDesc, { color: theme.subtext }]}>
+                Enter your choir's 8-character access code to pair and join.
+              </Text>
+            </View>
           </View>
-          <View style={[styles.stepRow, { backgroundColor: 'transparent' }]}>
-            <Ionicons name="filter-outline" size={18} color={theme.tint} />
-            <Text style={[styles.stepText, { color: theme.text }]}>
-              Scores are organized automatically by Title, Composer, Voicing, and Liturgical Season.
-            </Text>
+
+          <View style={styles.stepItem}>
+            <View style={[styles.stepBadge, { backgroundColor: theme.surfaceSubtle }]}>
+              <Ionicons name="cloud-download-outline" size={16} color={theme.tint} />
+            </View>
+            <View style={styles.stepTextContainer}>
+              <Text style={[styles.stepTitle, { color: theme.text }]}>Offline Sync</Text>
+              <Text style={[styles.stepDesc, { color: theme.subtext }]}>
+                All scores automatically cache to local storage for rehearsal or performance.
+              </Text>
+            </View>
           </View>
-          <View style={[styles.stepRow, { backgroundColor: 'transparent' }]}>
-            <Ionicons name="airplane-outline" size={18} color={theme.tint} />
-            <Text style={[styles.stepText, { color: theme.text }]}>
-              Enjoy 100% offline access in rehearsals, churches, and concert stages without WiFi.
-            </Text>
+
+          <View style={styles.stepItem}>
+            <View style={[styles.stepBadge, { backgroundColor: theme.surfaceSubtle }]}>
+              <Ionicons name="musical-notes-outline" size={16} color={theme.tint} />
+            </View>
+            <View style={styles.stepTextContainer}>
+              <Text style={[styles.stepTitle, { color: theme.text }]}>Stage & Study Mode</Text>
+              <Text style={[styles.stepDesc, { color: theme.subtext }]}>
+                Read scores with Stage Mode, foot pedal navigation, and instant page flips.
+              </Text>
+            </View>
           </View>
         </View>
 
+        {/* Done / Dismiss Button */}
         <TouchableOpacity
-          style={[styles.closeButton, { backgroundColor: theme.tint }]}
+          style={[styles.doneBtn, { backgroundColor: theme.tint }]}
+          activeOpacity={0.85}
           onPress={() => router.back()}>
-          <Text style={styles.closeButtonText}>Done</Text>
+          <Text style={styles.doneBtnText}>Done</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -94,20 +132,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
     alignItems: 'center',
-  },
-  modalLogo: {
-    width: 160,
-    height: 160,
+    maxWidth: 440,
+    width: '100%',
     alignSelf: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+  },
+  headerBlock: {
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: 'transparent',
+  },
+  logo: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 13,
-    marginBottom: 20,
     textAlign: 'center',
+    lineHeight: 18,
   },
   card: {
     width: '100%',
@@ -115,43 +167,105 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 16,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  sectionHeading: {
-    fontSize: 14,
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+    backgroundColor: 'transparent',
+  },
+  cardHeading: {
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 8,
+    letterSpacing: 0.8,
   },
-  cardHighlight: {
-    fontSize: 16,
+  detailList: {
+    gap: 8,
+    backgroundColor: 'transparent',
+  },
+  ensembleName: {
+    fontSize: 17,
     fontWeight: '700',
-    marginBottom: 4,
+    letterSpacing: -0.2,
   },
-  cardDetail: {
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  stepRow: {
+  codeBadge: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    marginVertical: 6,
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginVertical: 2,
   },
-  stepText: {
-    flex: 1,
+  codeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', web: 'monospace' }),
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+  },
+  detailText: {
     fontSize: 13,
     lineHeight: 18,
   },
-  closeButton: {
-    marginTop: 8,
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 8,
+    backgroundColor: 'transparent',
+  },
+  stepBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginTop: 2,
+  },
+  stepTextContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  stepTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  stepDesc: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  doneBtn: {
     width: '100%',
-    paddingVertical: 12,
+    height: 48,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    shadowColor: '#C49746',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  closeButtonText: {
-    color: '#FFFFFF',
+  doneBtnText: {
+    color: '#0D0E12',
     fontSize: 15,
     fontWeight: '700',
   },

@@ -7,6 +7,7 @@ import {
   Share,
   Platform,
   Dimensions,
+  useWindowDimensions,
   StatusBar,
   Modal,
   TextInput,
@@ -84,6 +85,9 @@ export default function ScoreViewerScreen() {
   const [showNotesDrawer, setShowNotesDrawer] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const { width: windowWidth } = useWindowDimensions();
+  const isCompactScreen = windowWidth < 720;
+  const [showToolsModal, setShowToolsModal] = useState<boolean>(false);
 
   // Go to Page Modal State
   const [showGoToPageModal, setShowGoToPageModal] = useState<boolean>(false);
@@ -318,74 +322,9 @@ export default function ScoreViewerScreen() {
             </Text>
           </View>
 
-          {/* Reader Controls Toolbar */}
+          {/* Reader Controls Toolbar (Adaptive: compact on mobile phones, full inline on tablet/desktop) */}
           <View style={[styles.headerActions, { backgroundColor: 'transparent' }]}>
-            {/* Zoom Controls */}
-            <View style={[styles.zoomGroup, { backgroundColor: theme.surfaceSubtle }]}>
-              <TouchableOpacity
-                style={styles.zoomBtn}
-                onPress={handleZoomOut}
-                disabled={zoomScale <= 0.6}
-                accessibilityLabel="Zoom Out">
-                <Ionicons name="remove" size={16} color={activeText} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.zoomResetBtn}
-                onPress={handleResetZoom}
-                accessibilityLabel="Reset Zoom">
-                <Text style={[styles.zoomText, { color: activeText }]}>
-                  {Math.round(zoomScale * 100)}%
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.zoomBtn}
-                onPress={handleZoomIn}
-                disabled={zoomScale >= 2.5}
-                accessibilityLabel="Zoom In">
-                <Ionicons name="add" size={16} color={activeText} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Single Page vs Continuous Scroll Mode */}
-            <TouchableOpacity
-              style={[
-                styles.iconButton,
-                {
-                  backgroundColor: theme.surfaceSubtle,
-                },
-              ]}
-              accessibilityLabel={viewMode === 'single' ? 'Switch to Continuous Scroll' : 'Switch to Single Page'}
-              onPress={() => setViewMode(viewMode === 'single' ? 'scroll' : 'single')}>
-              <Ionicons
-                name={viewMode === 'single' ? 'document-text-outline' : 'albums-outline'}
-                size={18}
-                color={activeText}
-              />
-            </TouchableOpacity>
-
-            {/* Sepia Parchment Mode Toggle */}
-            <TouchableOpacity
-              style={[
-                styles.iconButton,
-                {
-                  backgroundColor: sepiaMode ? '#F59E0B22' : theme.surfaceSubtle,
-                  borderColor: sepiaMode ? '#D97706' : 'transparent',
-                  borderWidth: sepiaMode ? 1 : 0,
-                },
-              ]}
-              accessibilityLabel="Warm Parchment Tone"
-              onPress={() => {
-                setSepiaMode(!sepiaMode);
-                if (!sepiaMode) setStageMode(false);
-              }}>
-              <Ionicons
-                name={sepiaMode ? 'sunny' : 'sunny-outline'}
-                size={18}
-                color={sepiaMode ? '#D97706' : activeText}
-              />
-            </TouchableOpacity>
-
-            {/* Stage Mode Toggle */}
+            {/* Stage Mode Toggle (Always quick access) */}
             <TouchableOpacity
               style={[
                 styles.iconButton,
@@ -395,7 +334,7 @@ export default function ScoreViewerScreen() {
                   borderWidth: stageMode ? 1 : 0,
                 },
               ]}
-              accessibilityLabel="Dark Stage Mode (Concert Hall Inversion)"
+              accessibilityLabel="Dark Stage Mode"
               onPress={() => {
                 setStageMode(!stageMode);
                 if (!stageMode) setSepiaMode(false);
@@ -407,45 +346,129 @@ export default function ScoreViewerScreen() {
               />
             </TouchableOpacity>
 
-            {/* Fullscreen Mode Toggle (Web & Native) */}
-            <TouchableOpacity
-              style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
-              accessibilityLabel={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-              onPress={handleToggleFullscreen}>
-              <Ionicons
-                name={isFullscreen ? 'contract-outline' : 'expand-outline'}
-                size={18}
-                color={activeText}
-              />
-            </TouchableOpacity>
+            {isCompactScreen ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
+                  accessibilityLabel="Reader Settings"
+                  onPress={() => setShowToolsModal(true)}>
+                  <Ionicons name="options-outline" size={18} color={activeText} />
+                </TouchableOpacity>
 
-            {/* Go to Page Action */}
-            <TouchableOpacity
-              style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
-              accessibilityLabel="Go to Page"
-              onPress={handleOpenGoToPage}>
-              <Ionicons name="navigate-outline" size={18} color={activeText} />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
+                  accessibilityLabel="Favorite Score"
+                  onPress={() => toggleFavorite(score.id)}>
+                  <Ionicons
+                    name={score.isFavorite ? 'star' : 'star-outline'}
+                    size={18}
+                    color={score.isFavorite ? '#F59E0B' : activeText}
+                  />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                {/* Zoom Controls */}
+                <View style={[styles.zoomGroup, { backgroundColor: theme.surfaceSubtle }]}>
+                  <TouchableOpacity
+                    style={styles.zoomBtn}
+                    onPress={handleZoomOut}
+                    disabled={zoomScale <= 0.6}
+                    accessibilityLabel="Zoom Out">
+                    <Ionicons name="remove" size={16} color={activeText} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.zoomResetBtn}
+                    onPress={handleResetZoom}
+                    accessibilityLabel="Reset Zoom">
+                    <Text style={[styles.zoomText, { color: activeText }]}>
+                      {Math.round(zoomScale * 100)}%
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.zoomBtn}
+                    onPress={handleZoomIn}
+                    disabled={zoomScale >= 2.5}
+                    accessibilityLabel="Zoom In">
+                    <Ionicons name="add" size={16} color={activeText} />
+                  </TouchableOpacity>
+                </View>
 
-            {/* Share / Open External (forScore) */}
-            <TouchableOpacity
-              style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
-              accessibilityLabel="Share / Export PDF"
-              onPress={handleShare}>
-              <Ionicons name="share-outline" size={18} color={activeText} />
-            </TouchableOpacity>
+                {/* Single Page vs Continuous Scroll Mode */}
+                <TouchableOpacity
+                  style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
+                  accessibilityLabel={viewMode === 'single' ? 'Switch to Continuous Scroll' : 'Switch to Single Page'}
+                  onPress={() => setViewMode(viewMode === 'single' ? 'scroll' : 'single')}>
+                  <Ionicons
+                    name={viewMode === 'single' ? 'document-text-outline' : 'albums-outline'}
+                    size={18}
+                    color={activeText}
+                  />
+                </TouchableOpacity>
 
-            {/* Favorite Toggle */}
-            <TouchableOpacity
-              style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
-              accessibilityLabel="Favorite Score"
-              onPress={() => toggleFavorite(score.id)}>
-              <Ionicons
-                name={score.isFavorite ? 'star' : 'star-outline'}
-                size={18}
-                color={score.isFavorite ? '#F59E0B' : activeText}
-              />
-            </TouchableOpacity>
+                {/* Sepia Parchment Mode Toggle */}
+                <TouchableOpacity
+                  style={[
+                    styles.iconButton,
+                    {
+                      backgroundColor: sepiaMode ? '#F59E0B22' : theme.surfaceSubtle,
+                      borderColor: sepiaMode ? '#D97706' : 'transparent',
+                      borderWidth: sepiaMode ? 1 : 0,
+                    },
+                  ]}
+                  accessibilityLabel="Warm Parchment Tone"
+                  onPress={() => {
+                    setSepiaMode(!sepiaMode);
+                    if (!sepiaMode) setStageMode(false);
+                  }}>
+                  <Ionicons
+                    name={sepiaMode ? 'sunny' : 'sunny-outline'}
+                    size={18}
+                    color={sepiaMode ? '#D97706' : activeText}
+                  />
+                </TouchableOpacity>
+
+                {/* Fullscreen Mode Toggle */}
+                <TouchableOpacity
+                  style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
+                  accessibilityLabel={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                  onPress={handleToggleFullscreen}>
+                  <Ionicons
+                    name={isFullscreen ? 'contract-outline' : 'expand-outline'}
+                    size={18}
+                    color={activeText}
+                  />
+                </TouchableOpacity>
+
+                {/* Go to Page Action */}
+                <TouchableOpacity
+                  style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
+                  accessibilityLabel="Go to Page"
+                  onPress={handleOpenGoToPage}>
+                  <Ionicons name="navigate-outline" size={18} color={activeText} />
+                </TouchableOpacity>
+
+                {/* Share / Open External */}
+                <TouchableOpacity
+                  style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
+                  accessibilityLabel="Share / Export PDF"
+                  onPress={handleShare}>
+                  <Ionicons name="share-outline" size={18} color={activeText} />
+                </TouchableOpacity>
+
+                {/* Favorite Toggle */}
+                <TouchableOpacity
+                  style={[styles.iconButton, { backgroundColor: theme.surfaceSubtle }]}
+                  accessibilityLabel="Favorite Score"
+                  onPress={() => toggleFavorite(score.id)}>
+                  <Ionicons
+                    name={score.isFavorite ? 'star' : 'star-outline'}
+                    size={18}
+                    color={score.isFavorite ? '#F59E0B' : activeText}
+                  />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       )}
@@ -678,6 +701,184 @@ export default function ScoreViewerScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Reader Tools Sheet Modal (Mobile Compact View) */}
+      <Modal
+        visible={showToolsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowToolsModal(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowToolsModal(false)}>
+          <View
+            style={[
+              styles.toolsSheetCard,
+              { backgroundColor: activeCard, borderColor: activeBorder },
+            ]}
+            onStartShouldSetResponder={() => true}>
+            <View style={styles.goToPageHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'transparent' }}>
+                <Ionicons name="options-outline" size={20} color={theme.tint} />
+                <Text style={[styles.goToPageTitle, { color: activeText }]}>Reader Settings</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowToolsModal(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={22} color={theme.subtext} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Zoom Stepper */}
+            <View style={styles.sheetSection}>
+              <Text style={[styles.sheetSectionLabel, { color: theme.subtext }]}>ZOOM LEVEL</Text>
+              <View style={[styles.sheetZoomRow, { backgroundColor: theme.surfaceSubtle }]}>
+                <TouchableOpacity
+                  style={styles.sheetZoomBtn}
+                  onPress={handleZoomOut}
+                  disabled={zoomScale <= 0.6}>
+                  <Ionicons name="remove" size={18} color={activeText} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.sheetZoomReset}
+                  onPress={handleResetZoom}>
+                  <Text style={[styles.sheetZoomText, { color: activeText }]}>
+                    {Math.round(zoomScale * 100)}% (Reset)
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.sheetZoomBtn}
+                  onPress={handleZoomIn}
+                  disabled={zoomScale >= 2.5}>
+                  <Ionicons name="add" size={18} color={activeText} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* View Mode Toggle */}
+            <View style={styles.sheetSection}>
+              <Text style={[styles.sheetSectionLabel, { color: theme.subtext }]}>VIEW MODE</Text>
+              <View style={[styles.sheetToggleRow, { backgroundColor: theme.surfaceSubtle }]}>
+                <TouchableOpacity
+                  style={[
+                    styles.sheetToggleBtn,
+                    viewMode === 'single' && { backgroundColor: theme.tint },
+                  ]}
+                  onPress={() => setViewMode('single')}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={15}
+                    color={viewMode === 'single' ? '#FFFFFF' : activeText}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.sheetToggleText, { color: viewMode === 'single' ? '#FFFFFF' : activeText }]}>
+                    Single Page
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.sheetToggleBtn,
+                    viewMode === 'scroll' && { backgroundColor: theme.tint },
+                  ]}
+                  onPress={() => setViewMode('scroll')}>
+                  <Ionicons
+                    name="albums-outline"
+                    size={15}
+                    color={viewMode === 'scroll' ? '#FFFFFF' : activeText}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.sheetToggleText, { color: viewMode === 'scroll' ? '#FFFFFF' : activeText }]}>
+                    Continuous Scroll
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Reading Tone Toggles */}
+            <View style={styles.sheetSection}>
+              <Text style={[styles.sheetSectionLabel, { color: theme.subtext }]}>READING TONE</Text>
+              <View style={styles.tonePillsRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.tonePill,
+                    { backgroundColor: theme.surfaceSubtle },
+                    !stageMode && !sepiaMode && { borderColor: theme.tint, borderWidth: 1.5 },
+                  ]}
+                  onPress={() => {
+                    setStageMode(false);
+                    setSepiaMode(false);
+                  }}>
+                  <Ionicons name="sunny-outline" size={14} color={activeText} style={{ marginRight: 4 }} />
+                  <Text style={[styles.toneText, { color: activeText }]}>Standard</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.tonePill,
+                    { backgroundColor: theme.surfaceSubtle },
+                    sepiaMode && { borderColor: '#D97706', borderWidth: 1.5 },
+                  ]}
+                  onPress={() => {
+                    setSepiaMode(!sepiaMode);
+                    if (!sepiaMode) setStageMode(false);
+                  }}>
+                  <Ionicons name="sunny" size={14} color="#D97706" style={{ marginRight: 4 }} />
+                  <Text style={[styles.toneText, { color: activeText }]}>Warm Sepia</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.tonePill,
+                    { backgroundColor: theme.surfaceSubtle },
+                    stageMode && { borderColor: '#F59E0B', borderWidth: 1.5 },
+                  ]}
+                  onPress={() => {
+                    setStageMode(!stageMode);
+                    if (!stageMode) setSepiaMode(false);
+                  }}>
+                  <Ionicons name="flash" size={14} color="#F59E0B" style={{ marginRight: 4 }} />
+                  <Text style={[styles.toneText, { color: activeText }]}>Dark Stage</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Actions: Jump to Page, Share, Fullscreen */}
+            <View style={styles.sheetActionsRow}>
+              <TouchableOpacity
+                style={[styles.sheetActionBtn, { backgroundColor: theme.surfaceSubtle }]}
+                onPress={() => {
+                  setShowToolsModal(false);
+                  handleOpenGoToPage();
+                }}>
+                <Ionicons name="navigate-outline" size={16} color={activeText} style={{ marginRight: 6 }} />
+                <Text style={[styles.sheetActionText, { color: activeText }]}>Jump to Page</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sheetActionBtn, { backgroundColor: theme.surfaceSubtle }]}
+                onPress={() => {
+                  setShowToolsModal(false);
+                  handleShare();
+                }}>
+                <Ionicons name="share-outline" size={16} color={activeText} style={{ marginRight: 6 }} />
+                <Text style={[styles.sheetActionText, { color: activeText }]}>Share PDF</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sheetActionBtn, { backgroundColor: theme.surfaceSubtle }]}
+                onPress={() => {
+                  setShowToolsModal(false);
+                  handleToggleFullscreen();
+                }}>
+                <Ionicons name="expand-outline" size={16} color={activeText} style={{ marginRight: 6 }} />
+                <Text style={[styles.sheetActionText, { color: activeText }]}>Fullscreen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -758,39 +959,45 @@ const styles = StyleSheet.create({
   },
   pageControls: {
     position: 'absolute',
-    bottom: 16,
+    bottom: 20,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    borderRadius: 28,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 6,
-    gap: 12,
-    zIndex: 20,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+    gap: 14,
+    zIndex: 30,
   },
   pageBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    gap: 6,
   },
   pageBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
   pageCounterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   pageCounterText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 0.5,
   },
   drawer: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -1006,5 +1213,100 @@ const styles = StyleSheet.create({
   },
   quickPageChipText: {
     fontSize: 14,
+  },
+  toolsSheetCard: {
+    width: '92%',
+    maxWidth: 420,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    gap: 16,
+  },
+  sheetSection: {
+    gap: 6,
+  },
+  sheetSectionLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  sheetZoomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    height: 42,
+    overflow: 'hidden',
+  },
+  sheetZoomBtn: {
+    width: 44,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetZoomReset: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetZoomText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  sheetToggleRow: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    padding: 3,
+  },
+  sheetToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  sheetToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  tonePillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  tonePill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  toneText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sheetActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 4,
+  },
+  sheetActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  sheetActionText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

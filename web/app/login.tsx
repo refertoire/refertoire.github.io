@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
-  Alert,
   Image,
   Linking,
 } from 'react-native';
@@ -55,7 +54,6 @@ export default function LoginScreen() {
   const [ensembleLoading, setEnsembleLoading] = useState(false);
   const [ensembleError, setEnsembleError] = useState<string | null>(null);
 
-  // 1. Handle User Sign Up
   const handleSignUp = async () => {
     if (!fullName.trim()) {
       setAuthError('Please enter your full name.');
@@ -85,22 +83,20 @@ export default function LoginScreen() {
     if (res.success) {
       if (res.requiresEmailConfirmation) {
         setAuthSuccess(
-          res.message || 'Account created in Supabase! Please check your email to verify your account, then sign in below.'
+          res.message || 'Verification link sent to your email. Confirm and sign in.'
         );
         setAuthMode('signin');
       } else {
         setDirectorName(fullName.trim());
-        setAuthSuccess(null);
       }
     } else {
       setAuthError(res.error || 'Failed to create account.');
     }
   };
 
-  // 2. Handle User Sign In
   const handleSignIn = async () => {
     if (!email.trim() || !password) {
-      setAuthError('Please enter both email and password.');
+      setAuthError('Please enter email and password.');
       return;
     }
 
@@ -120,15 +116,14 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } else {
-      setAuthError(res.error || 'Failed to sign in.');
+      setAuthError(res.error || 'Sign in failed. Check credentials.');
     }
   };
 
-  // 3. Handle Joining Ensemble with Code
   const handleJoinEnsemble = async () => {
     const code = joinCode.trim().toUpperCase();
     if (!code) {
-      setEnsembleError('Please enter an ensemble access code.');
+      setEnsembleError('Enter your 8-character ensemble access code.');
       return;
     }
 
@@ -145,15 +140,14 @@ export default function LoginScreen() {
     }
   };
 
-  // 4. Handle Creating New Ensemble (Creator is Admin by default)
   const handleCreateEnsemble = async () => {
     if (!ensembleName.trim()) {
-      setEnsembleError('Please enter an ensemble name.');
+      setEnsembleError('Enter the ensemble or choir name.');
       return;
     }
     const finalDirector = (directorName || currentUser?.fullName || '').trim();
     if (!finalDirector) {
-      setEnsembleError('Please specify the choir director name.');
+      setEnsembleError('Specify the director name.');
       return;
     }
 
@@ -188,52 +182,43 @@ export default function LoginScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
         style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets={true}>
-          {/* Header Branding: HD Logo */}
-          <View style={[styles.headerContainer, { backgroundColor: 'transparent' }]}>
+          keyboardShouldPersistTaps="handled">
+          {/* Compact Brand Header */}
+          <View style={styles.header}>
             <Image
               source={require('@/assets/images/refertoire-logo.png')}
-              style={styles.logoImage}
+              style={styles.logo}
               resizeMode="contain"
             />
+            <Text style={[styles.brandTitle, { color: theme.text }]}>Refertoire</Text>
+            <Text style={[styles.brandSub, { color: theme.subtext }]}>
+              Ensemble Repertoire & Sheet Music Sync
+            </Text>
           </View>
 
-          {/* STEP 1: AUTHENTICATION (Sign In / Sign Up) */}
+          {/* STEP 1: AUTHENTICATION */}
           {!currentUser ? (
-            <View
-              style={[
-                styles.mainCard,
-                { backgroundColor: theme.card, borderColor: theme.border },
-              ]}>
-              {/* Tab Switcher: Sign In vs Sign Up */}
-              <View style={[styles.tabBar, { backgroundColor: theme.surfaceSubtle }]}>
+            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              {/* Segmented Switcher */}
+              <View style={[styles.segmentedBar, { backgroundColor: theme.surfaceSubtle }]}>
                 <TouchableOpacity
                   style={[
-                    styles.tabBtn,
-                    authMode === 'signin' && [styles.tabBtnActive, { backgroundColor: theme.card }],
+                    styles.segBtn,
+                    authMode === 'signin' && [styles.segBtnActive, { backgroundColor: theme.card }],
                   ]}
                   onPress={() => {
                     setAuthMode('signin');
                     setAuthError(null);
                     setAuthSuccess(null);
                   }}>
-                  <Ionicons
-                    name="log-in-outline"
-                    size={16}
-                    color={authMode === 'signin' ? theme.tint : theme.subtext}
-                    style={{ marginRight: 6 }}
-                  />
                   <Text
                     style={[
-                      styles.tabBtnText,
+                      styles.segText,
                       { color: authMode === 'signin' ? theme.text : theme.subtext },
-                      authMode === 'signin' && styles.tabBtnTextActive,
+                      authMode === 'signin' && styles.segTextActive,
                     ]}>
                     Sign In
                   </Text>
@@ -241,418 +226,259 @@ export default function LoginScreen() {
 
                 <TouchableOpacity
                   style={[
-                    styles.tabBtn,
-                    authMode === 'signup' && [styles.tabBtnActive, { backgroundColor: theme.card }],
+                    styles.segBtn,
+                    authMode === 'signup' && [styles.segBtnActive, { backgroundColor: theme.card }],
                   ]}
                   onPress={() => {
                     setAuthMode('signup');
                     setAuthError(null);
                     setAuthSuccess(null);
                   }}>
-                  <Ionicons
-                    name="person-add-outline"
-                    size={16}
-                    color={authMode === 'signup' ? theme.tint : theme.subtext}
-                    style={{ marginRight: 6 }}
-                  />
                   <Text
                     style={[
-                      styles.tabBtnText,
+                      styles.segText,
                       { color: authMode === 'signup' ? theme.text : theme.subtext },
-                      authMode === 'signup' && styles.tabBtnTextActive,
+                      authMode === 'signup' && styles.segTextActive,
                     ]}>
                     Create Account
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Success / Confirmation Message */}
+              {/* Status / Alert Messages */}
               {authSuccess && (
-                <View style={[styles.errorBox, { backgroundColor: '#ECFDF5', borderColor: '#34D399' }]}>
-                  <Ionicons name="checkmark-circle" size={18} color="#059669" style={{ marginRight: 8 }} />
-                  <Text style={[styles.errorText, { color: '#065F46' }]}>{authSuccess}</Text>
+                <View style={styles.successBox}>
+                  <Ionicons name="checkmark-circle" size={16} color="#059669" />
+                  <Text style={styles.successText}>{authSuccess}</Text>
                 </View>
               )}
 
-              {/* Error Message */}
               {authError && (
-                <View style={[styles.errorBox, { backgroundColor: '#FEE2E2', borderColor: '#F87171' }]}>
-                  <Ionicons name="alert-circle" size={18} color="#DC2626" style={{ marginRight: 8 }} />
-                  <Text style={[styles.errorText, { color: '#B91C1C' }]}>{authError}</Text>
+                <View style={styles.errorBox}>
+                  <Ionicons name="alert-circle" size={16} color="#DC2626" />
+                  <Text style={styles.errorText}>{authError}</Text>
                 </View>
               )}
 
-              {/* Sign Up Fields */}
               {authMode === 'signup' && (
-                <View style={{ backgroundColor: 'transparent' }}>
-                  <Text style={[styles.inputLabel, { color: theme.text }]}>Full Name</Text>
+                <View style={styles.formGroup}>
+                  <Text style={[styles.fieldLabel, { color: theme.text }]}>Full Name</Text>
                   <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: theme.surfaceSubtle,
-                        borderColor: theme.border,
-                        color: theme.text,
-                      },
-                    ]}
+                    style={[styles.input, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
                     placeholder="e.g. Julian Vance"
                     placeholderTextColor={theme.subtext}
                     value={fullName}
                     onChangeText={setFullName}
                     autoCapitalize="words"
                   />
-
-                  <Text style={[styles.inputLabel, { color: theme.text }]}>Email Address</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: theme.surfaceSubtle,
-                        borderColor: theme.border,
-                        color: theme.text,
-                      },
-                    ]}
-                    placeholder="e.g. director@cathedralchoir.org"
-                    placeholderTextColor={theme.subtext}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-
-                  <Text style={[styles.inputLabel, { color: theme.text }]}>Password (min 6 chars)</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: theme.surfaceSubtle,
-                        borderColor: theme.border,
-                        color: theme.text,
-                      },
-                    ]}
-                    placeholder="••••••••"
-                    placeholderTextColor={theme.subtext}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                  />
-
-                  <TouchableOpacity
-                    style={[styles.submitButton, { backgroundColor: theme.tint }]}
-                    onPress={handleSignUp}
-                    disabled={authLoading}>
-                    {authLoading ? (
-                      <ActivityIndicator color="#FFFFFF" />
-                    ) : (
-                      <>
-                        <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                        <Text style={styles.submitButtonText}>Create Account</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
                 </View>
               )}
 
-              {/* Sign In Fields */}
-              {authMode === 'signin' && (
-                <View style={{ backgroundColor: 'transparent' }}>
-                  <Text style={[styles.inputLabel, { color: theme.text }]}>Email Address</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: theme.surfaceSubtle,
-                        borderColor: theme.border,
-                        color: theme.text,
-                      },
-                    ]}
-                    placeholder="e.g. singer@choir.org"
-                    placeholderTextColor={theme.subtext}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
+              <View style={styles.formGroup}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Email Address</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
+                  placeholder="e.g. singer@choir.org"
+                  placeholderTextColor={theme.subtext}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
 
-                  <Text style={[styles.inputLabel, { color: theme.text }]}>Password</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: theme.surfaceSubtle,
-                        borderColor: theme.border,
-                        color: theme.text,
-                      },
-                    ]}
-                    placeholder="••••••••"
-                    placeholderTextColor={theme.subtext}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                  />
+              <View style={styles.formGroup}>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>Password</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
+                  placeholder="••••••••"
+                  placeholderTextColor={theme.subtext}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              </View>
 
-                  <TouchableOpacity
-                    style={[styles.submitButton, { backgroundColor: theme.tint }]}
-                    onPress={handleSignIn}
-                    disabled={authLoading}>
-                    {authLoading ? (
-                      <ActivityIndicator color="#FFFFFF" />
-                    ) : (
-                      <>
-                        <Ionicons name="log-in-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                        <Text style={styles.submitButtonText}>Sign In to Account</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              )}
+              <TouchableOpacity
+                style={[styles.primaryBtn, { backgroundColor: theme.tint }]}
+                onPress={authMode === 'signin' ? handleSignIn : handleSignUp}
+                disabled={authLoading}>
+                {authLoading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>
+                    {authMode === 'signin' ? 'Sign In' : 'Create Account'}
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           ) : (
             /* STEP 2: ENSEMBLE SELECTION (Logged In) */
-            <View style={{ gap: 16, backgroundColor: 'transparent' }}>
-              {/* Logged in User Profile Banner */}
-              <View
-                style={[
-                  styles.profileBanner,
-                  { backgroundColor: theme.card, borderColor: theme.border },
-                ]}>
-                <View style={[styles.profileAvatar, { backgroundColor: theme.badgeBackground }]}>
-                  <Ionicons name="person" size={22} color={theme.tint} />
+            <View style={styles.ensembleContainer}>
+              {/* Profile summary */}
+              <View style={[styles.profileStrip, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={[styles.avatar, { backgroundColor: theme.badgeBackground }]}>
+                  <Ionicons name="person" size={16} color={theme.tint} />
                 </View>
-                <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+                <View style={styles.profileTextWrap}>
                   <Text style={[styles.profileName, { color: theme.text }]}>{currentUser.fullName}</Text>
-                  <Text style={[styles.profileEmail, { color: theme.subtext }]}>
-                    {currentUser.email}
-                  </Text>
+                  <Text style={[styles.profileEmail, { color: theme.subtext }]}>{currentUser.email}</Text>
                 </View>
-                <TouchableOpacity
-                  style={[styles.signOutBtn, { backgroundColor: theme.surfaceSubtle }]}
-                  onPress={signOutUser}>
-                  <Ionicons name="log-out-outline" size={16} color={Colors.status.failed} />
-                  <Text style={[styles.signOutText, { color: Colors.status.failed }]}>Log Out</Text>
+                <TouchableOpacity onPress={signOutUser} style={styles.logoutBtn}>
+                  <Ionicons name="log-out-outline" size={15} color={Colors.status.failed} />
                 </TouchableOpacity>
               </View>
 
-              {/* Already Connected Group shortcut */}
+              {/* Active Repertoire shortcut */}
               {currentInstance && (
-                <View
-                  style={[
-                    styles.currentGroupBanner,
-                    { backgroundColor: theme.badgeBackground, borderColor: theme.tint },
-                  ]}>
-                  <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-                    <Text style={[styles.currentGroupLabel, { color: theme.badgeText }]}>Active Repertoire</Text>
-                    <Text style={[styles.currentGroupName, { color: theme.text }]}>{currentInstance.name}</Text>
-                    <Text style={[styles.currentGroupCode, { color: theme.tint }]}>Code: {currentInstance.code}</Text>
+                <TouchableOpacity
+                  style={[styles.activeGroupBar, { backgroundColor: theme.badgeBackground, borderColor: theme.tint }]}
+                  onPress={() => router.replace('/(tabs)')}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.activeGroupLabel, { color: theme.badgeText }]}>CURRENT ENSEMBLE</Text>
+                    <Text style={[styles.activeGroupName, { color: theme.text }]}>{currentInstance.name}</Text>
+                    <Text style={[styles.activeGroupCode, { color: theme.tint }]}>Code: {currentInstance.code}</Text>
                   </View>
-                  <TouchableOpacity
-                    style={[styles.enterGroupBtn, { backgroundColor: theme.tint }]}
-                    onPress={() => router.replace('/(tabs)')}>
-                    <Text style={styles.enterGroupBtnText}>Open Scores</Text>
-                    <Ionicons name="arrow-forward" size={16} color="#FFFFFF" style={{ marginLeft: 4 }} />
-                  </TouchableOpacity>
-                </View>
+                  <Ionicons name="arrow-forward" size={18} color={theme.tint} />
+                </TouchableOpacity>
               )}
 
-              {/* Ensemble Tab Switcher: Join vs Create */}
-              <View
-                style={[
-                  styles.mainCard,
-                  { backgroundColor: theme.card, borderColor: theme.border },
-                ]}>
-                <View style={[styles.tabBar, { backgroundColor: theme.surfaceSubtle }]}>
+              {/* Join or Create Card */}
+              <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={[styles.segmentedBar, { backgroundColor: theme.surfaceSubtle }]}>
                   <TouchableOpacity
                     style={[
-                      styles.tabBtn,
-                      ensembleMode === 'join' && [styles.tabBtnActive, { backgroundColor: theme.card }],
+                      styles.segBtn,
+                      ensembleMode === 'join' && [styles.segBtnActive, { backgroundColor: theme.card }],
                     ]}
                     onPress={() => {
                       setEnsembleMode('join');
                       setEnsembleError(null);
                     }}>
-                    <Ionicons
-                      name="key-outline"
-                      size={16}
-                      color={ensembleMode === 'join' ? theme.tint : theme.subtext}
-                      style={{ marginRight: 6 }}
-                    />
                     <Text
                       style={[
-                        styles.tabBtnText,
+                        styles.segText,
                         { color: ensembleMode === 'join' ? theme.text : theme.subtext },
-                        ensembleMode === 'join' && styles.tabBtnTextActive,
+                        ensembleMode === 'join' && styles.segTextActive,
                       ]}>
-                      Join Ensemble
+                      Join with Code
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={[
-                      styles.tabBtn,
-                      ensembleMode === 'create' && [styles.tabBtnActive, { backgroundColor: theme.card }],
+                      styles.segBtn,
+                      ensembleMode === 'create' && [styles.segBtnActive, { backgroundColor: theme.card }],
                     ]}
                     onPress={() => {
                       setEnsembleMode('create');
                       setEnsembleError(null);
                     }}>
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={16}
-                      color={ensembleMode === 'create' ? theme.tint : theme.subtext}
-                      style={{ marginRight: 6 }}
-                    />
                     <Text
                       style={[
-                        styles.tabBtnText,
+                        styles.segText,
                         { color: ensembleMode === 'create' ? theme.text : theme.subtext },
-                        ensembleMode === 'create' && styles.tabBtnTextActive,
+                        ensembleMode === 'create' && styles.segTextActive,
                       ]}>
                       Create Ensemble
                     </Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* Ensemble Error Message */}
                 {ensembleError && (
-                  <View style={[styles.errorBox, { backgroundColor: '#FEE2E2', borderColor: '#F87171' }]}>
-                    <Ionicons name="alert-circle" size={18} color="#DC2626" style={{ marginRight: 8 }} />
-                    <Text style={[styles.errorText, { color: '#B91C1C' }]}>{ensembleError}</Text>
+                  <View style={styles.errorBox}>
+                    <Ionicons name="alert-circle" size={16} color="#DC2626" />
+                    <Text style={styles.errorText}>{ensembleError}</Text>
                   </View>
                 )}
 
-                {/* JOIN ENSEMBLE */}
-                {ensembleMode === 'join' && (
-                  <View style={{ backgroundColor: 'transparent' }}>
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Enter Ensemble Access Code</Text>
-                    <Text style={[styles.sectionSub, { color: theme.subtext }]}>
-                      Ask your choir director for your group's 8-character access code.
-                    </Text>
-
+                {ensembleMode === 'join' ? (
+                  <View style={styles.formGroup}>
+                    <Text style={[styles.fieldLabel, { color: theme.text }]}>Ensemble Access Code</Text>
                     <TextInput
                       style={[
+                        styles.input,
                         styles.codeInput,
-                        {
-                          backgroundColor: theme.surfaceSubtle,
-                          borderColor: theme.border,
-                          color: theme.tint,
-                        },
+                        { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.tint },
                       ]}
                       placeholder="e.g. CANTOR-4819"
                       placeholderTextColor={theme.subtext}
                       value={joinCode}
                       onChangeText={val => setJoinCode(val.toUpperCase())}
                       autoCapitalize="characters"
+                      autoCorrect={false}
                     />
-
                     <TouchableOpacity
-                      style={[styles.submitButton, { backgroundColor: theme.tint }]}
+                      style={[styles.primaryBtn, { backgroundColor: theme.tint, marginTop: 14 }]}
                       onPress={handleJoinEnsemble}
                       disabled={ensembleLoading}>
                       {ensembleLoading ? (
-                        <ActivityIndicator color="#FFFFFF" />
+                        <ActivityIndicator color="#FFFFFF" size="small" />
                       ) : (
-                        <>
-                          <Ionicons name="log-in-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                          <Text style={styles.submitButtonText}>Join Ensemble Repertoire</Text>
-                        </>
+                        <Text style={styles.primaryBtnText}>Join Repertoire</Text>
                       )}
                     </TouchableOpacity>
                   </View>
-                )}
-
-                {/* CREATE NEW ENSEMBLE */}
-                {ensembleMode === 'create' && (
-                  <View style={{ backgroundColor: 'transparent' }}>
-                    <View style={[styles.adminNoticeBadge, { backgroundColor: theme.badgeBackground }]}>
-                      <Ionicons name="sparkles" size={16} color={theme.tint} style={{ marginRight: 6 }} />
-                      <Text style={[styles.adminNoticeText, { color: theme.badgeText }]}>
-                        You will be assigned as <Text style={{ fontWeight: '700' }}>Admin / Director</Text> by default.
-                      </Text>
+                ) : (
+                  <View style={{ gap: 10 }}>
+                    <View style={styles.formGroup}>
+                      <Text style={[styles.fieldLabel, { color: theme.text }]}>Ensemble Name</Text>
+                      <TextInput
+                        style={[styles.input, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
+                        placeholder="e.g. St. Mark Choir"
+                        placeholderTextColor={theme.subtext}
+                        value={ensembleName}
+                        onChangeText={setEnsembleName}
+                      />
                     </View>
 
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Ensemble / Choir Name</Text>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        {
-                          backgroundColor: theme.surfaceSubtle,
-                          borderColor: theme.border,
-                          color: theme.text,
-                        },
-                      ]}
-                      placeholder="e.g. Cathedral Chamber Choir"
-                      placeholderTextColor={theme.subtext}
-                      value={ensembleName}
-                      onChangeText={setEnsembleName}
-                    />
-
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Director Name</Text>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        {
-                          backgroundColor: theme.surfaceSubtle,
-                          borderColor: theme.border,
-                          color: theme.text,
-                        },
-                      ]}
-                      placeholder="e.g. Dr. Julian Vance"
-                      placeholderTextColor={theme.subtext}
-                      value={directorName}
-                      onChangeText={setDirectorName}
-                    />
-
-                    <Text style={[styles.inputLabel, { color: theme.text }]}>Season / Concert Name (Optional)</Text>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        {
-                          backgroundColor: theme.surfaceSubtle,
-                          borderColor: theme.border,
-                          color: theme.text,
-                        },
-                      ]}
-                      placeholder="e.g. 2026 Masterworks Cycle"
-                      placeholderTextColor={theme.subtext}
-                      value={seasonName}
-                      onChangeText={setSeasonName}
-                    />
-
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-                      <Text style={[styles.inputLabel, { color: theme.text, marginTop: 0 }]}>Custom Access Code (Optional)</Text>
-                      <TouchableOpacity onPress={handleSuggestCode}>
-                        <Text style={[styles.suggestText, { color: theme.tint }]}>Suggest Code</Text>
-                      </TouchableOpacity>
+                    <View style={styles.formGroup}>
+                      <Text style={[styles.fieldLabel, { color: theme.text }]}>Director Name</Text>
+                      <TextInput
+                        style={[styles.input, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
+                        placeholder="e.g. Dr. Julian Vance"
+                        placeholderTextColor={theme.subtext}
+                        value={directorName}
+                        onChangeText={setDirectorName}
+                      />
                     </View>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        {
-                          backgroundColor: theme.surfaceSubtle,
-                          borderColor: theme.border,
-                          color: theme.tint,
-                          fontWeight: '700',
-                          letterSpacing: 1,
-                        },
-                      ]}
-                      placeholder="e.g. CANTOR-2026"
-                      placeholderTextColor={theme.subtext}
-                      value={customCode}
-                      onChangeText={val => setCustomCode(val.toUpperCase())}
-                      autoCapitalize="characters"
-                    />
+
+                    <View style={styles.formGroup}>
+                      <Text style={[styles.fieldLabel, { color: theme.text }]}>Season / Occasion (Optional)</Text>
+                      <TextInput
+                        style={[styles.input, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
+                        placeholder="e.g. Lent & Easter 2026"
+                        placeholderTextColor={theme.subtext}
+                        value={seasonName}
+                        onChangeText={setSeasonName}
+                      />
+                    </View>
+
+                    <View style={styles.formGroup}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={[styles.fieldLabel, { color: theme.text }]}>Access Code (Optional)</Text>
+                        <TouchableOpacity onPress={handleSuggestCode}>
+                          <Text style={[styles.suggestLink, { color: theme.tint }]}>Suggest Code</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <TextInput
+                        style={[styles.input, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.tint, fontWeight: '700' }]}
+                        placeholder="e.g. CHORAL-26"
+                        placeholderTextColor={theme.subtext}
+                        value={customCode}
+                        onChangeText={val => setCustomCode(val.toUpperCase())}
+                        autoCapitalize="characters"
+                      />
+                    </View>
 
                     <TouchableOpacity
-                      style={[styles.submitButton, { backgroundColor: theme.tint }]}
+                      style={[styles.primaryBtn, { backgroundColor: theme.tint, marginTop: 4 }]}
                       onPress={handleCreateEnsemble}
                       disabled={ensembleLoading}>
                       {ensembleLoading ? (
-                        <ActivityIndicator color="#FFFFFF" />
+                        <ActivityIndicator color="#FFFFFF" size="small" />
                       ) : (
-                        <>
-                          <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                          <Text style={styles.submitButtonText}>Create Ensemble & Become Director</Text>
-                        </>
+                        <Text style={styles.primaryBtnText}>Create Ensemble</Text>
                       )}
                     </TouchableOpacity>
                   </View>
@@ -661,22 +487,16 @@ export default function LoginScreen() {
             </View>
           )}
 
-          {/* Web Standalone APK Download Banner */}
+          {/* Android APK Link on Web */}
           {Platform.OS === 'web' && (
             <TouchableOpacity
-              style={[styles.apkBanner, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
+              style={[styles.apkStrip, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
               onPress={() => Linking.openURL('https://refertoire.github.io/apk/Refertoire.apk')}>
-              <Ionicons name="logo-android" size={20} color="#22C55E" style={{ marginRight: 10 }} />
-              <View style={{ backgroundColor: 'transparent', flex: 1 }}>
-                <Text style={[styles.apkBannerTitle, { color: theme.text }]}>Download Android App (.APK)</Text>
-                <Text style={[styles.apkBannerSub, { color: theme.subtext }]}>Offline sheet music & rehearsal scores on Android</Text>
-              </View>
-              <Ionicons name="download-outline" size={18} color={theme.tint} />
+              <Ionicons name="logo-android" size={17} color="#22C55E" />
+              <Text style={[styles.apkStripText, { color: theme.text }]}>Download Standalone Android APK</Text>
+              <Ionicons name="arrow-forward" size={14} color={theme.subtext} />
             </TouchableOpacity>
           )}
-
-          {/* Keyboard Buffer Spacer */}
-          <View style={styles.keyboardBuffer} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -688,244 +508,210 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 24,
-    paddingBottom: 60,
-    maxWidth: 540,
+    paddingBottom: 40,
+    maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
   },
-  headerContainer: {
+  header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  logoImage: {
-    width: 210,
-    height: 210,
-    alignSelf: 'center',
+  logo: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    marginBottom: 10,
   },
-  mainCard: {
-    borderRadius: 16,
+  brandTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+  },
+  brandSub: {
+    fontSize: 12,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  card: {
+    borderRadius: 18,
     borderWidth: 1,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowRadius: 10,
     elevation: 3,
   },
-  tabBar: {
+  segmentedBar: {
     flexDirection: 'row',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 4,
     marginBottom: 18,
   },
-  tabBtn: {
+  segBtn: {
     flex: 1,
-    flexDirection: 'row',
+    paddingVertical: 9,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 9,
   },
-  tabBtnActive: {
+  segBtnActive: {
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 3,
-    elevation: 2,
   },
-  tabBtnText: {
+  segText: {
     fontSize: 13,
     fontWeight: '600',
   },
-  tabBtnTextActive: {
+  segTextActive: {
     fontWeight: '700',
+  },
+  successBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#ECFDF5',
+    gap: 10,
+    marginBottom: 14,
+  },
+  successText: {
+    fontSize: 12,
+    color: '#065F46',
+    flex: 1,
+    lineHeight: 18,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 16,
+    borderRadius: 10,
+    backgroundColor: '#FEE2E2',
+    gap: 10,
+    marginBottom: 14,
   },
   errorText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#B91C1C',
     flex: 1,
+    lineHeight: 18,
   },
-  inputLabel: {
-    fontSize: 13,
+  formGroup: {
+    gap: 6,
+    marginBottom: 14,
+  },
+  fieldLabel: {
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 6,
-    marginTop: 12,
   },
   input: {
-    height: 46,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    fontSize: 14,
-  },
-  chipsScroll: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 6,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  chipText: {
-    fontSize: 12,
-  },
-  submitButton: {
     height: 48,
     borderRadius: 12,
-    flexDirection: 'row',
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    fontSize: 15,
+  },
+  codeInput: {
+    height: 52,
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  suggestLink: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  primaryBtn: {
+    height: 48,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
+    marginTop: 8,
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  submitButtonText: {
+  primaryBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
-  profileBanner: {
+  ensembleContainer: {
+    gap: 14,
+  },
+  profileStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
     gap: 12,
   },
-  profileAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  profileTextWrap: {
+    flex: 1,
+  },
   profileName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
   },
   profileEmail: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 1,
   },
-  signOutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+  logoutBtn: {
+    padding: 8,
   },
-  signOutText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  currentGroupBanner: {
+  activeGroupBar: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
-    gap: 12,
   },
-  currentGroupLabel: {
+  activeGroupLabel: {
     fontSize: 10,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
-  currentGroupName: {
+  activeGroupName: {
     fontSize: 15,
     fontWeight: '700',
     marginTop: 2,
   },
-  currentGroupCode: {
+  activeGroupCode: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     marginTop: 2,
   },
-  enterGroupBtn: {
+  apkStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  enterGroupBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  sectionSub: {
-    fontSize: 12,
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  codeInput: {
-    height: 52,
+    padding: 14,
     borderRadius: 12,
-    borderWidth: 1.5,
-    paddingHorizontal: 16,
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 2,
-    textAlign: 'center',
-  },
-  adminNoticeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  adminNoticeText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  suggestText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  keyboardBuffer: {
-    height: 40,
-  },
-  apkBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginTop: 18,
+    marginTop: 16,
+    gap: 12,
   },
-  apkBannerTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  apkBannerSub: {
-    fontSize: 12,
-    marginTop: 2,
+  apkStripText: {
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
   },
 });

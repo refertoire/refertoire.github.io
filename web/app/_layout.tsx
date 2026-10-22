@@ -36,6 +36,25 @@ export default function RootLayout() {
     if (loaded) {
       SplashScreen.hideAsync();
     }
+    if (typeof document !== 'undefined') {
+      const styleId = 'refertoire-scrollbar-fix';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          * {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+          }
+          *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
   }, [loaded]);
 
   if (!loaded) {
