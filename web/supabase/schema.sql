@@ -1,8 +1,6 @@
 -- ==============================================================================
 -- REFERTOIRE SUPABASE SCHEMA & MULTI-DEVICE CLOUD SYNC MIGRATION
--- Project ID: ctfxbeltcmmsvagecvyr
--- Run this in your Supabase SQL Editor:
--- https://supabase.com/dashboard/project/ctfxbeltcmmsvagecvyr/sql
+-- Run this in your Supabase SQL Editor (Dashboard -> SQL Editor)
 -- ==============================================================================
 
 -- 1. Create profiles table (Links with Supabase Auth auth.users)

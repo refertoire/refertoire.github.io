@@ -36,9 +36,42 @@ yarn-error.*
 
 # local env files
 .env
-.env*.local
-web/.env
-web/.env*.local
+.env*
+!.env.example
+!web/.env.example
+*.env
+*.env.*
+
+# Security, keys, certificates & credentials
+*.keystore
+*.key
+*.pem
+*.p12
+*.p8
+*.jks
+*.cer
+*.crt
+*.der
+*.pfx
+secrets/
+*.secret
+*credentials*.json
+*service-account*.json
+id_rsa*
+id_ed25519*
+
+# AI assistants & local workflow files
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+*.agent.md
+.claude/
+.agents/
+.gemini/
+
+# Editor & IDE settings
+.vscode/
+.idea/
 
 # typescript
 *.tsbuildinfo

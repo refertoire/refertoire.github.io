@@ -3,10 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 const supabaseUrl =
-  process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://ctfxbeltcmmsvagecvyr.supabase.co';
+  process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-  'sb_publishable_rM0bbgfuaZJiCRUx_naPwg_mZbROvvl';
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
 const isWeb = Platform.OS === 'web';
 const isServer = isWeb && typeof window === 'undefined';

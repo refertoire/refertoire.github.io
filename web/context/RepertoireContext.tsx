@@ -79,6 +79,11 @@ interface RepertoireContextValue {
 
 const RepertoireContext = createContext<RepertoireContextValue | undefined>(undefined);
 
+const getSampleScoreUrl = (fileName: string) => {
+  const baseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+  return baseUrl ? `${baseUrl}/storage/v1/object/public/scores/${fileName}` : '';
+};
+
 export const DEMO_ENSEMBLE: RepertoireInstance = {
   code: 'CANTOR-4819',
   name: 'Cathedral Choral Society',
@@ -118,7 +123,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'D Major',
       tempo: 'Adagio',
       tags: ['Motet', 'Latin', 'Lent'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-ave-verum.pdf',
+      sourceUrl: getSampleScoreUrl('sample-ave-verum.pdf'),
       fileSize: 142000,
       downloadStatus: 'completed',
       addedAt: '2026-01-15T00:00:00.000Z',
@@ -136,7 +141,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'D Major',
       tempo: 'Allegro',
       tags: ['Oratorio', 'Easter', 'Anthem'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-hallelujah.pdf',
+      sourceUrl: getSampleScoreUrl('sample-hallelujah.pdf'),
       fileSize: 285000,
       downloadStatus: 'completed',
       addedAt: '2026-01-15T00:00:00.000Z',
@@ -154,7 +159,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'F Major',
       tempo: 'Moderato',
       tags: ['Renaissance', 'Polyphony'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-sicut-cervus.pdf',
+      sourceUrl: getSampleScoreUrl('sample-sicut-cervus.pdf'),
       fileSize: 198000,
       downloadStatus: 'completed',
       addedAt: '2026-01-16T00:00:00.000Z',
@@ -172,7 +177,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'F Major',
       tempo: 'Andante',
       tags: ['Orthodox', 'Vespers'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-bogoroditse.pdf',
+      sourceUrl: getSampleScoreUrl('sample-bogoroditse.pdf'),
       fileSize: 210000,
       downloadStatus: 'completed',
       addedAt: '2026-01-18T00:00:00.000Z',
@@ -190,7 +195,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'G Minor',
       tempo: 'Vivace',
       tags: ['Baroque', 'Concert'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-cantate.pdf',
+      sourceUrl: getSampleScoreUrl('sample-cantate.pdf'),
       fileSize: 184000,
       downloadStatus: 'completed',
       addedAt: '2026-01-20T00:00:00.000Z',
@@ -208,7 +213,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'F Major',
       tempo: 'Lento',
       tags: ['Tudor', 'Anthem'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-if-ye-love-me.pdf',
+      sourceUrl: getSampleScoreUrl('sample-if-ye-love-me.pdf'),
       fileSize: 112000,
       downloadStatus: 'completed',
       addedAt: '2026-01-22T00:00:00.000Z',
