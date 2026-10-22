@@ -937,54 +937,74 @@
       transform: translateY(-1px);
     }
 
-    /* Downloads Comparison Section */
+    /* Downloads Comparison Table Section */
     .downloads-section {
       padding: clamp(64px, 8vh, 100px) 0;
       border-top: 1px solid var(--border-subtle);
     }
 
-    .version-dual-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 32px;
-      align-items: stretch;
-    }
-
-    @media (min-width: 880px) {
-      .version-dual-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 32px;
-      }
-    }
-
-    .version-card {
+    .version-table-card {
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 20px;
-      padding: clamp(28px, 4vw, 38px);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+      box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.5);
     }
 
-    .version-card:hover {
-      border-color: rgba(245, 158, 11, 0.35);
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    .version-table-scroller {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .version-card-header {
-      margin-bottom: 22px;
+    .version-table {
+      width: 100%;
+      min-width: 780px;
+      border-collapse: collapse;
+      text-align: left;
     }
 
-    .version-card-title {
-      font-size: clamp(22px, 2.5vw, 26px);
-      font-weight: 800;
-      color: var(--text-primary);
+    /* Table Head */
+    .version-table thead th {
+      padding: 32px 28px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      vertical-align: top;
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .th-feat-col {
+      width: 38%;
+    }
+
+    .th-platform-col {
+      width: 31%;
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .th-feat-head-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
       margin-bottom: 8px;
+    }
+
+    .th-feat-head-sub {
+      font-size: clamp(18px, 2vw, 22px);
+      font-weight: 800;
+      color: #FFFFFF;
       letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+
+    .th-platform-title {
+      font-size: clamp(20px, 2.2vw, 24px);
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
       display: flex;
       align-items: baseline;
       flex-wrap: wrap;
@@ -998,26 +1018,101 @@
       letter-spacing: 0;
     }
 
-    .version-card-desc {
-      font-size: 14px;
+    .th-platform-desc {
+      font-size: 13.5px;
       color: var(--text-secondary);
-      line-height: 1.6;
+      line-height: 1.55;
+      margin-bottom: 18px;
+      min-height: 42px;
     }
 
-    .version-features {
+    .th-action-wrap {
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      margin-bottom: 32px;
-      padding: 18px 0;
-      border-top: 1px solid var(--border-subtle);
-      border-bottom: 1px solid var(--border-subtle);
+      gap: 8px;
+      align-items: flex-start;
     }
 
-    .v-feat-row {
+    .btn-th-action {
+      width: 100%;
+      max-width: 240px;
+      padding: 10px 18px;
+      font-size: 14px;
+      justify-content: center;
+    }
+
+    .th-subnote {
+      font-size: 11.5px;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
+    }
+
+    /* Table Body - Spacing & Hairline Divisions */
+    .version-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .version-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .version-table td {
+      padding: 22px 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      vertical-align: middle;
+    }
+
+    .td-feature {
+      width: 38%;
+    }
+
+    .td-platform {
+      width: 31%;
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .version-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tbl-feat-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+
+    .tbl-feat-sub {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .cell-status-wrap {
       display: flex;
       align-items: flex-start;
       gap: 12px;
+    }
+
+    .cell-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cell-main {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.35;
+    }
+
+    .cell-sub {
+      font-size: 12.5px;
+      color: var(--text-tertiary);
+      line-height: 1.4;
     }
 
     .ind-icon {
@@ -1054,42 +1149,16 @@
       font-weight: 800;
     }
 
-    .v-feat-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    /* Table Footer Quick-Action Row */
+    .version-table tfoot td {
+      padding: 24px 28px;
+      background: rgba(255, 255, 255, 0.015);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      vertical-align: middle;
     }
 
-    .v-feat-name {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .v-feat-sub {
-      font-size: 12.5px;
-      color: var(--text-secondary);
-      line-height: 1.45;
-    }
-
-    .version-card-action-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .btn-version-action {
-      width: 100%;
-      justify-content: center;
-      padding: 14px 22px;
-      font-size: 15px;
-    }
-
-    .version-action-note {
-      font-size: 12px;
-      color: var(--text-tertiary);
-      text-align: center;
-      font-family: var(--font-mono);
+    .td-footer-platform {
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
     }
   </style>
 </head>
@@ -1179,146 +1248,235 @@
           <p class="section-sub">Two tailored builds designed for rehearsal needs. Standalone Android APK for tablets and phones, or the Web App for PC, Mac, and iOS users with hybrid disk sync.</p>
         </div>
 
-        <div class="version-dual-grid">
-          <!-- Left Column: Android APK -->
-          <div class="version-card">
-            <div class="version-card-header">
-              <h3 class="version-card-title">Android APK</h3>
-              <p class="version-card-desc">Standalone native app for Android tablets and phones. Prompts you to pick your storage folder (on device storage or SD card), saving, referencing, and syncing all repertoire PDFs directly in that chosen folder for 100% offline rehearsal reading.</p>
-            </div>
-
-            <div class="version-features">
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Pick Your Storage Folder</span>
-                  <span class="v-feat-sub">Prompt to select any folder on your device; app saves, references, and syncs PDFs directly in it</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Direct Local File Sync</span>
-                  <span class="v-feat-sub">Syncs sheet music PDFs straight into your selected directory without hiding files in an inaccessible sandbox</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">100% Offline Standalone Viewer</span>
-                  <span class="v-feat-sub">Native high-DPI viewer with instant score rendering, page flip turns, and stage dark mode</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Bluetooth Pedal Support</span>
-                  <span class="v-feat-sub">Wireless page turns via PageUp, PageDown, and Arrow keys</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-white" title="Alternative approach">–</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Third-Party Score Export</span>
-                  <span class="v-feat-sub">Open PDFs directly from your folder or via Android Share Sheet into external viewers</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Direct APK Installation</span>
-                  <span class="v-feat-sub">Direct sideload install; zero app store login or account needed</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-grey" title="Not available">✕</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Zero-Install Browser Access</span>
-                  <span class="v-feat-sub">Requires APK installation on Android devices</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="version-card-action-wrap">
-              <a href="./apk/Refertoire.apk" class="btn btn-primary btn-version-action" download="Refertoire.apk">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                <span>Download APK</span>
-                <span class="btn-badge">v1.0.0</span>
-              </a>
-              <div class="version-action-note">Android 8.0+ • 49 MB • Standalone APK</div>
-            </div>
-          </div>
-
-          <!-- Right Column: Web Version -->
-          <div class="version-card">
-            <div class="version-card-header">
-              <h3 class="version-card-title">
-                <span>Web Version</span>
-                <span class="version-title-sub">for iOS and Desktops</span>
-              </h3>
-              <p class="version-card-desc">File manager sync agent and reader for PC, Mac, iPad, and iPhone. Prompts you to pick your storage folder, saving and referencing all repertoire PDFs directly in that chosen directory.</p>
-            </div>
-
-            <div class="version-features">
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Pick Your Storage Folder</span>
-                  <span class="v-feat-sub">Prompt to select your local or cloud folder via File System Access API; app saves and references all scores in your folder</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Direct Local File Sync</span>
-                  <span class="v-feat-sub">File System Access API mirrors the ensemble hierarchy directly into your selected hard drive or cloud folder</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-white" title="Alternative approach">–</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">100% Offline Standalone Viewer</span>
-                  <span class="v-feat-sub">Offline capability via browser Service Worker cache and direct local folder access</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Bluetooth Pedal Support</span>
-                  <span class="v-feat-sub">Standard browser keyboard triggers respond to wireless pedals</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Third-Party Score Export</span>
-                  <span class="v-feat-sub">Direct file dispatch into iOS Files, forScore, PiaScore, and desktop folders</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-grey" title="Not available">✕</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Direct APK Installation</span>
-                  <span class="v-feat-sub">No APK installation; opens immediately in any standard modern browser</span>
-                </div>
-              </div>
-              <div class="v-feat-row">
-                <span class="ind-icon ind-yellow" title="Supported">✓</span>
-                <div class="v-feat-info">
-                  <span class="v-feat-name">Zero-Install Browser Access</span>
-                  <span class="v-feat-sub">Opens instantly in Chrome, Safari, and Edge without installing packages</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="version-card-action-wrap">
-              <a href="./web/" class="btn btn-secondary btn-version-action">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                <span>Launch Web App</span>
-                <span class="btn-badge">PWA</span>
-              </a>
-              <div class="version-action-note">No installation needed • PC, Mac, iPad, iPhone</div>
-            </div>
+                <div class="version-table-card">
+          <div class="version-table-scroller">
+            <table class="version-table">
+              <thead>
+                <tr>
+                  <th class="th-feat-col">
+                    <div class="th-feat-head-title">Feature Comparison</div>
+                    <div class="th-feat-head-sub">Repertoire Sync &amp; Rehearsal Capabilities</div>
+                  </th>
+                  <th class="th-platform-col">
+                    <div class="th-platform-title">Android APK</div>
+                    <p class="th-platform-desc">Standalone native app for Android tablets and phones with direct folder sync and 100% offline repertoire reader.</p>
+                    <div class="th-action-wrap">
+                      <a href="./apk/Refertoire.apk" class="btn btn-primary btn-th-action" download="Refertoire.apk">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Download APK</span>
+                        <span class="btn-badge">v1.0.0</span>
+                      </a>
+                      <span class="th-subnote">Android 8.0+ • 49 MB • Standalone APK</span>
+                    </div>
+                  </th>
+                  <th class="th-platform-col">
+                    <div class="th-platform-title">
+                      <span>Web Version</span>
+                      <span class="version-title-sub">for iOS and Desktops</span>
+                    </div>
+                    <p class="th-platform-desc">Browser sync agent and score viewer for PC, Mac, iPad, and iPhone with local folder disk sync.</p>
+                    <div class="th-action-wrap">
+                      <a href="./web/" class="btn btn-secondary btn-th-action">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        <span>Launch Web App</span>
+                        <span class="btn-badge">PWA</span>
+                      </a>
+                      <span class="th-subnote">Zero install needed • PC, Mac, iPad, iPhone</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="td-feature">
+                    <div class="tbl-feat-name">Pick Your Storage Folder</div>
+                    <div class="tbl-feat-sub">App prompts you to pick the directory where repertoire scores are stored and synced</div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Direct Device or SD Storage</span>
+                        <span class="cell-sub">Select any folder on device; app saves, references, and syncs PDFs directly in it</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">File System Access API</span>
+                        <span class="cell-sub">Prompts for local folder; app saves and references all scores directly in your folder</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <div class="tbl-feat-name">Direct Local File Sync</div>
+                    <div class="tbl-feat-sub">Syncs sheet music PDFs straight into your selected directory without hiding files in an inaccessible sandbox</div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">100% Offline Local Cache</span>
+                        <span class="cell-sub">Files remain directly accessible on your device storage without sandbox locks</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Mirrors Folder Hierarchy</span>
+                        <span class="cell-sub">Directly mirrors ensemble folder tree to your selected hard drive or cloud disk</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <div class="tbl-feat-name">100% Offline Standalone Viewer</div>
+                    <div class="tbl-feat-sub">High-DPI score reader with instant flip turns, zoom, and stage dark mode</div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Native High-DPI Engine</span>
+                        <span class="cell-sub">Zero-latency page rendering, smooth flip transitions, and performance stage mode</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-white" title="Alternative approach">–</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Browser Cache &amp; Standalone Viewer</span>
+                        <span class="cell-sub">Offline capability via Service Worker cache and direct local folder access</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <div class="tbl-feat-name">Bluetooth Pedal Support</div>
+                    <div class="tbl-feat-sub">Hands-free page turns during rehearsals and live performances</div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Hardware Keyboard &amp; Pedal Events</span>
+                        <span class="cell-sub">Wireless page turns via PageUp, PageDown, and Arrow keys</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Web Keyboard Triggers</span>
+                        <span class="cell-sub">Standard browser keyboard triggers respond seamlessly to wireless pedals</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <div class="tbl-feat-name">Third-Party Score Export</div>
+                    <div class="tbl-feat-sub">Open PDFs directly in forScore, PiaScore, or external annotation apps</div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Direct Folder &amp; Share Sheet</span>
+                        <span class="cell-sub">Open PDFs directly from your folder or via Android Share Sheet into external viewers</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Direct File Dispatch</span>
+                        <span class="cell-sub">Direct file dispatch into iOS Files, forScore, PiaScore, and desktop folders</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <div class="tbl-feat-name">Direct APK Installation</div>
+                    <div class="tbl-feat-sub">Standalone installation package without app store login or account requirement</div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Direct Sideload APK</span>
+                        <span class="cell-sub">Direct sideload install; zero app store login or account needed</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-grey" title="Not available">✕</span>
+                      <div class="cell-info">
+                        <span class="cell-main">No APK Installation</span>
+                        <span class="cell-sub">Opens immediately in any modern browser without downloading packages</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <div class="tbl-feat-name">Zero-Install Browser Access</div>
+                    <div class="tbl-feat-sub">Instant access on any laptop, iPad, or desktop browser</div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-grey" title="Not available">✕</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Requires APK Installation</span>
+                        <span class="cell-sub">Installed natively on Android devices for full hardware integration</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <div class="cell-info">
+                        <span class="cell-main">Instant Web App Launch</span>
+                        <span class="cell-sub">Opens instantly in Chrome, Safari, and Edge without installing packages</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>
+                    <div class="cell-main">Select the build suited for your rehearsals</div>
+                    <div class="cell-sub">Both builds share the same zero-clutter sheet music experience</div>
+                  </td>
+                  <td class="td-footer-platform">
+                    <a href="./apk/Refertoire.apk" class="btn btn-primary btn-th-action" download="Refertoire.apk">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      <span>Download APK</span>
+                    </a>
+                  </td>
+                  <td class="td-footer-platform">
+                    <a href="./web/" class="btn btn-secondary btn-th-action">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                      <span>Launch Web App</span>
+                    </a>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
       </div>
