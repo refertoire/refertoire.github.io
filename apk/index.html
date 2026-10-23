@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta http-equiv="refresh" content="1; url=https://refertoire.github.io/apk/Refertoire.apk">
-  <title>Download Refertoire for Android — Standalone APK</title>
+  <title>Download Refertoire for Android: Standalone APK</title>
   <link rel="icon" type="image/png" href="https://refertoire.github.io/refertoire-logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,17 +41,41 @@
       justify-content: center;
       padding: 24px 16px;
       line-height: 1.5;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .apk-silk-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .apk-silk-container canvas {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
     }
 
     .card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      position: relative;
+      z-index: 10;
+      background: rgba(14, 20, 34, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 20px;
       padding: clamp(24px, 6vw, 36px) clamp(18px, 5vw, 32px);
       max-width: 460px;
       width: 100%;
       text-align: center;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
     }
 
     .logo-img {
@@ -170,6 +194,9 @@
   </style>
 </head>
 <body>
+  <!-- Silk Background -->
+  <div class="apk-silk-container" id="apk-silk" aria-hidden="true"></div>
+
   <div class="card">
     <img src="https://refertoire.github.io/refertoire-logo.png" alt="Refertoire" class="logo-img">
     <h1>Refertoire for Android</h1>
@@ -202,10 +229,31 @@
     </div>
   </div>
 
+  <script src="../assets/silk.js"></script>
   <script>
-    setTimeout(function() {
-      window.location.href = 'https://refertoire.github.io/apk/Refertoire.apk';
-    }, 400);
+    (function() {
+      var apkSilk = document.getElementById('apk-silk');
+      if (apkSilk && typeof window.initSilk === 'function') {
+        window.initSilk(apkSilk, {
+          color: '#3e3e3e',
+          sheenColor: '#ffffff',
+          speed: 6.9,
+          scale: 1,
+          rotation: 0,
+          sheen: 0.5,
+          depth: 0,
+          glow: 0,
+          noiseIntensity: 1.4,
+          mouseInteraction: false,
+          clickRipple: false,
+          intro: false
+        });
+      }
+
+      setTimeout(function() {
+        window.location.href = 'https://refertoire.github.io/apk/Refertoire.apk';
+      }, 1500);
+    })();
   </script>
 </body>
 </html>

@@ -73,11 +73,19 @@ interface RepertoireContextValue {
   signOut: () => Promise<void>;
   reSyncAll: () => Promise<void>;
   toggleFavorite: (scoreId: string) => Promise<void>;
+  repertoireFolder: { uri: string | null; name: string | null };
+  pickRepertoireFolder: () => Promise<{ success: boolean; name?: string; error?: string }>;
+  clearRepertoireFolder: () => Promise<void>;
   clearOfflineCache: () => Promise<void>;
   purgeCleanSlate: () => Promise<void>;
 }
 
 const RepertoireContext = createContext<RepertoireContextValue | undefined>(undefined);
+
+const getSampleScoreUrl = (fileName: string) => {
+  const baseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+  return baseUrl ? `${baseUrl}/storage/v1/object/public/scores/${fileName}` : '';
+};
 
 export const DEMO_ENSEMBLE: RepertoireInstance = {
   code: 'CANTOR-4819',
@@ -118,7 +126,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'D Major',
       tempo: 'Adagio',
       tags: ['Motet', 'Latin', 'Lent'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-ave-verum.pdf',
+      sourceUrl: getSampleScoreUrl('sample-ave-verum.pdf'),
       fileSize: 142000,
       downloadStatus: 'completed',
       addedAt: '2026-01-15T00:00:00.000Z',
@@ -136,7 +144,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'D Major',
       tempo: 'Allegro',
       tags: ['Oratorio', 'Easter', 'Anthem'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-hallelujah.pdf',
+      sourceUrl: getSampleScoreUrl('sample-hallelujah.pdf'),
       fileSize: 285000,
       downloadStatus: 'completed',
       addedAt: '2026-01-15T00:00:00.000Z',
@@ -154,7 +162,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'F Major',
       tempo: 'Moderato',
       tags: ['Renaissance', 'Polyphony'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-sicut-cervus.pdf',
+      sourceUrl: getSampleScoreUrl('sample-sicut-cervus.pdf'),
       fileSize: 198000,
       downloadStatus: 'completed',
       addedAt: '2026-01-16T00:00:00.000Z',
@@ -172,7 +180,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'F Major',
       tempo: 'Andante',
       tags: ['Orthodox', 'Vespers'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-bogoroditse.pdf',
+      sourceUrl: getSampleScoreUrl('sample-bogoroditse.pdf'),
       fileSize: 210000,
       downloadStatus: 'completed',
       addedAt: '2026-01-18T00:00:00.000Z',
@@ -190,7 +198,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'G Minor',
       tempo: 'Vivace',
       tags: ['Baroque', 'Concert'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-cantate.pdf',
+      sourceUrl: getSampleScoreUrl('sample-cantate.pdf'),
       fileSize: 184000,
       downloadStatus: 'completed',
       addedAt: '2026-01-20T00:00:00.000Z',
@@ -208,7 +216,7 @@ export const DEMO_ENSEMBLE: RepertoireInstance = {
       keySignature: 'F Major',
       tempo: 'Lento',
       tags: ['Tudor', 'Anthem'],
-      sourceUrl: 'https://ctfxbeltcmmsvagecvyr.supabase.co/storage/v1/object/public/scores/sample-if-ye-love-me.pdf',
+      sourceUrl: getSampleScoreUrl('sample-if-ye-love-me.pdf'),
       fileSize: 112000,
       downloadStatus: 'completed',
       addedAt: '2026-01-22T00:00:00.000Z',
@@ -229,6 +237,10 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
   const [favorites, setFavorites] = useState<string[]>([]);
   const [preferredVoicePart, setPreferredVoicePartState] = useState<string | null>(null);
   const [isOfflineMode, setIsOfflineModeState] = useState<boolean>(false);
+  const [repertoireFolder, setRepertoireFolder] = useState<{ uri: string | null; name: string | null }>({
+    uri: null,
+    name: null,
+  });
 
   // Sorting & Filtering State
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -288,6 +300,13 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
         // 3. Restore offline mode preference
         const offlineModeStored = await StorageService.getOfflineMode();
         setIsOfflineModeState(offlineModeStored);
+
+        // 4. Restore user-picked repertoire storage folder
+        const folderUri = await StorageService.getRepertoireFolderUri();
+        const folderName = await StorageService.getRepertoireFolderName();
+        if (folderUri) {
+          setRepertoireFolder({ uri: folderUri, name: folderName });
+        }
 
         // 4. Restore active choir instance
         const activeCode = await StorageService.getActiveInstanceCode();
@@ -689,9 +708,36 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
     await StorageService.setPreferredVoicePart(part);
   };
 
+  // Pick user repertoire storage folder
+  const pickRepertoireFolder = useCallback(async () => {
+    try {
+      const res = await DownloadService.pickRepertoireFolder();
+      if (res) {
+        setRepertoireFolder(res);
+        if (currentInstance) {
+          syncScoresForInstance(currentInstance);
+        }
+        return { success: true, name: res.name };
+      }
+      return { success: false, error: 'No folder selected' };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Failed to select folder' };
+    }
+  }, [currentInstance, syncScoresForInstance]);
+
+  // Disconnect repertoire storage folder
+  const clearRepertoireFolder = useCallback(async () => {
+    await StorageService.setRepertoireFolderUri(null);
+    await StorageService.setRepertoireFolderName(null);
+    setRepertoireFolder({ uri: null, name: null });
+  }, []);
+
   // Clean slate purge
   const purgeCleanSlate = async () => {
     await DatabaseService.purgeCleanSlateDatabase();
+    await StorageService.setRepertoireFolderUri(null);
+    await StorageService.setRepertoireFolderName(null);
+    setRepertoireFolder({ uri: null, name: null });
     setCurrentInstance(null);
     setCurrentUser(null);
     setUserRole('member');
@@ -774,6 +820,9 @@ export function RepertoireProvider({ children }: { children: React.ReactNode }) 
         signOut,
         reSyncAll,
         toggleFavorite,
+        repertoireFolder,
+        pickRepertoireFolder,
+        clearRepertoireFolder,
         clearOfflineCache,
         purgeCleanSlate,
       }}>

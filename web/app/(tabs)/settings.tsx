@@ -43,6 +43,9 @@ export default function SettingsScreen() {
     signOut,
     signOutUser,
     uploadScore,
+    repertoireFolder,
+    pickRepertoireFolder,
+    clearRepertoireFolder,
   } = useRepertoire();
 
   const [showMembersModal, setShowMembersModal] = useState(false);
@@ -53,7 +56,7 @@ export default function SettingsScreen() {
   const [updateCheckStatus, setUpdateCheckStatus] = useState<string | null>(null);
   const [pendingUploadFile, setPendingUploadFile] = useState<SelectedPdfFile | null>(null);
 
-  // Hybrid Sync Agent State
+  // Storage Folder & Sync Agent State
   const isFsaSupported = HybridSyncService.isFileSystemAccessSupported();
   const isIOS = HybridSyncService.isIOS();
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
@@ -83,23 +86,30 @@ export default function SettingsScreen() {
     return HybridSyncService.buildSyncTree(currentInstance, hierarchyMode);
   }, [currentInstance, hierarchyMode]);
 
-  // Pick local folder (Desktop)
+  // Effective active folder name
+  const effectiveFolderName = repertoireFolder.name || linkedFolderName;
+
+  // Pick user repertoire storage folder (Native Directory or Web FSA)
   const handlePickFolder = async () => {
     try {
-      const handle = await HybridSyncService.pickDirectory();
-      if (handle) {
-        setDirectoryHandle(handle);
-        setLinkedFolderName(handle.name);
-        // Automatically run initial sync to populate the folder
-        if (currentInstance) {
-          setIsSyncingDisk(true);
-          await HybridSyncService.syncToLocalDisk(
-            handle,
-            currentInstance,
-            hierarchyMode,
-            setSyncDiskProgress
-          );
-          setIsSyncingDisk(false);
+      const res = await pickRepertoireFolder();
+      if (res.success && res.name) {
+        setLinkedFolderName(res.name);
+        if (isFsaSupported) {
+          const handle = await HybridSyncService.getStoredDirectoryHandle();
+          if (handle) {
+            setDirectoryHandle(handle);
+            if (currentInstance) {
+              setIsSyncingDisk(true);
+              await HybridSyncService.syncToLocalDisk(
+                handle,
+                currentInstance,
+                hierarchyMode,
+                setSyncDiskProgress
+              );
+              setIsSyncingDisk(false);
+            }
+          }
         }
       }
     } catch (e: any) {
@@ -109,30 +119,39 @@ export default function SettingsScreen() {
     }
   };
 
-  // Unlink folder
+  // Disconnect repertoire storage folder
   const handleUnlinkFolder = async () => {
+    await clearRepertoireFolder();
     await HybridSyncService.removeDirectoryHandle();
     setDirectoryHandle(null);
     setLinkedFolderName(null);
   };
 
-  // Sync to local disk (Desktop)
+  // Sync scores to the chosen folder
   const handleSyncToDisk = async () => {
-    if (!directoryHandle || !currentInstance) return;
+    if (!currentInstance) return;
     setIsSyncingDisk(true);
     try {
-      const result = await HybridSyncService.syncToLocalDisk(
-        directoryHandle,
-        currentInstance,
-        hierarchyMode,
-        setSyncDiskProgress
-      );
-      Alert.alert(
-        'Sync Complete',
-        `Synchronized ${result.syncedCount} score files to ${linkedFolderName}/.`
-      );
+      if (directoryHandle) {
+        const result = await HybridSyncService.syncToLocalDisk(
+          directoryHandle,
+          currentInstance,
+          hierarchyMode,
+          setSyncDiskProgress
+        );
+        Alert.alert(
+          'Sync Complete',
+          `Synchronized ${result.syncedCount} score files to ${effectiveFolderName || 'folder'}/.`
+        );
+      } else {
+        await reSyncAll();
+        Alert.alert(
+          'Sync Complete',
+          `Repertoire scores synchronized and referenced in ${effectiveFolderName || 'device storage'}.`
+        );
+      }
     } catch (e: any) {
-      Alert.alert('Sync Error', e.message || 'Failed to sync to local directory.');
+      Alert.alert('Sync Notice', e.message || 'Failed to sync to local directory.');
     } finally {
       setIsSyncingDisk(false);
     }
@@ -321,24 +340,24 @@ export default function SettingsScreen() {
             )}
           </View>
 
-          {/* Local Directory Sync Agent (Desktop FSA & iOS Vault) */}
+          {/* Repertoire Storage Folder Section */}
           <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.sectionCardHeader}>
               <View style={styles.sectionTitleRow}>
                 <Ionicons
-                  name={isFsaSupported ? 'folder-open' : 'cloud-download-outline'}
+                  name="folder"
                   size={18}
                   color={theme.tint}
                 />
                 <Text style={[styles.sectionCardTitle, { color: theme.text }]}>
-                  {isFsaSupported ? 'Local Directory Sync Agent' : 'Repertoire File Manager & Vault'}
+                  Repertoire Storage Folder
                 </Text>
               </View>
               <View
                 style={[
                   styles.syncStatusPill,
                   {
-                    backgroundColor: linkedFolderName
+                    backgroundColor: effectiveFolderName
                       ? 'rgba(16, 185, 129, 0.12)'
                       : theme.surfaceSubtle,
                   },
@@ -347,7 +366,7 @@ export default function SettingsScreen() {
                   style={[
                     styles.syncDot,
                     {
-                      backgroundColor: linkedFolderName
+                      backgroundColor: effectiveFolderName
                         ? '#10B981'
                         : theme.subtext,
                     },
@@ -357,62 +376,74 @@ export default function SettingsScreen() {
                   style={[
                     styles.syncStatusText,
                     {
-                      color: linkedFolderName ? '#10B981' : theme.subtext,
+                      color: effectiveFolderName ? '#10B981' : theme.subtext,
                     },
                   ]}>
-                  {linkedFolderName ? 'Disk Mirror Linked' : isIOS ? 'iOS Vault Active' : 'Ready to Link'}
+                  {effectiveFolderName ? 'Folder Connected' : 'No Folder Selected'}
                 </Text>
               </View>
             </View>
 
             <View style={styles.sectionBody}>
-              {/* Desktop Direct Disk Flow */}
-              {isFsaSupported ? (
+              {isFsaSupported || Platform.OS !== 'web' ? (
                 <>
-                  {linkedFolderName ? (
-                    <View style={[styles.linkedFolderBox, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
-                      <View style={styles.linkedFolderInfo}>
-                        <Ionicons name="folder" size={24} color={theme.tint} />
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.linkedFolderLabel, { color: theme.subtext }]}>
-                            TARGET LOCAL DIRECTORY
-                          </Text>
-                          <Text style={[styles.linkedFolderPath, { color: theme.text }]} numberOfLines={1}>
-                            {linkedFolderName}/
-                          </Text>
-                        </View>
-                      </View>
+                  {/* Folder Selector / Status Display */}
+                  {effectiveFolderName ? (
+                <View style={[styles.linkedFolderBox, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+                  <View style={styles.linkedFolderInfo}>
+                    <Ionicons name="folder-open" size={24} color={theme.tint} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.linkedFolderLabel, { color: theme.subtext }]}>
+                        ACTIVE REPERTOIRE STORAGE DIRECTORY
+                      </Text>
+                      <Text style={[styles.linkedFolderPath, { color: theme.text }]} numberOfLines={1}>
+                        {effectiveFolderName}/
+                      </Text>
+                      <Text style={{ fontSize: 12, color: theme.subtext, marginTop: 2 }}>
+                        Refertoire saves and references all sheet music PDFs inside this chosen folder.
+                      </Text>
+                    </View>
+                  </View>
 
-                      <TouchableOpacity
-                        style={styles.unlinkBtn}
-                        onPress={handleUnlinkFolder}
-                        disabled={isSyncingDisk}>
-                        <Ionicons name="close-circle-outline" size={16} color={theme.subtext} />
-                        <Text style={[styles.unlinkText, { color: theme.subtext }]}>Change</Text>
-                      </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity
+                      style={styles.unlinkBtn}
+                      onPress={handlePickFolder}
+                      disabled={isSyncingDisk}>
+                      <Ionicons name="swap-horizontal-outline" size={16} color={theme.subtext} />
+                      <Text style={[styles.unlinkText, { color: theme.subtext }]}>Change</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.unlinkBtn}
+                      onPress={handleUnlinkFolder}
+                      disabled={isSyncingDisk}>
+                      <Ionicons name="close-circle-outline" size={16} color={theme.subtext} />
+                      <Text style={[styles.unlinkText, { color: theme.subtext }]}>Unlink</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={[styles.unlinkedPromptBox, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+                  <View style={styles.unlinkedPromptLeft}>
+                    <Ionicons name="folder-outline" size={24} color={theme.tint} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.promptTitle, { color: theme.text }]}>
+                        Pick Repertoire Storage Folder
+                      </Text>
+                      <Text style={[styles.promptSub, { color: theme.subtext }]}>
+                        Choose where Refertoire will save and sync your repertoire scores. The app will reference PDFs directly from this folder for rehearsals and performances.
+                      </Text>
                     </View>
-                  ) : (
-                    <View style={[styles.unlinkedPromptBox, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
-                      <View style={styles.unlinkedPromptLeft}>
-                        <Ionicons name="folder-outline" size={24} color={theme.tint} />
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.promptTitle, { color: theme.text }]}>
-                            No local choir directory linked
-                          </Text>
-                          <Text style={[styles.promptSub, { color: theme.subtext }]}>
-                            Select a folder on your computer, iCloud, or Dropbox to mirror repertoire and folders.
-                          </Text>
-                        </View>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.primaryActionBtn, { backgroundColor: theme.tint }]}
-                        onPress={handlePickFolder}
-                        disabled={isSyncingDisk}>
-                        <Ionicons name="folder-open-outline" size={16} color="#0D0E12" style={{ marginRight: 6 }} />
-                        <Text style={styles.primaryActionBtnText}>Link Local Folder</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.primaryActionBtn, { backgroundColor: theme.tint }]}
+                    onPress={handlePickFolder}
+                    disabled={isSyncingDisk}>
+                    <Ionicons name="folder-open-outline" size={16} color="#0D0E12" style={{ marginRight: 6 }} />
+                    <Text style={styles.primaryActionBtnText}>Choose Storage Folder</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
                   {/* Hierarchy Mode Selector */}
                   <View style={styles.hierarchyModeContainer}>
@@ -453,8 +484,8 @@ export default function SettingsScreen() {
                     </View>
                   </View>
 
-                  {/* Desktop Sync Action & Progress */}
-                  {linkedFolderName && (
+                  {/* Direct Folder Sync Action & Progress */}
+                  {effectiveFolderName && (
                     <View style={styles.syncActionArea}>
                       {isSyncingDisk && syncDiskProgress && (
                         <View style={styles.progressContainer}>
@@ -489,7 +520,7 @@ export default function SettingsScreen() {
                         ) : (
                           <>
                             <Ionicons name="sync" size={17} color="#0D0E12" style={{ marginRight: 6 }} />
-                            <Text style={styles.primaryActionBtnText}>Sync to Local Disk Now</Text>
+                            <Text style={styles.primaryActionBtnText}>Sync Scores to Folder Now</Text>
                           </>
                         )}
                       </TouchableOpacity>

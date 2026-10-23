@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { Paths, Directory, File } from 'expo-file-system';
 import { ScoreItem, SyncProgress } from '@/types/repertoire';
 import { StorageService } from './storageService';
+import { HybridSyncService } from './hybridSyncService';
 
 // Sample fallback minimal valid PDF binary header & content for offline demonstration
 const FALLBACK_PDF_BASE64 =
@@ -9,12 +10,57 @@ const FALLBACK_PDF_BASE64 =
 
 export class DownloadService {
   /**
-   * Get or create directory for instance scores
+   * Prompt user to pick a folder where the repertoire will be saved and referenced
    */
-  static getScoresDirectory(instanceCode: string): Directory | null {
+  static async pickRepertoireFolder(): Promise<{ uri: string; name: string } | null> {
+    if (Platform.OS === 'web') {
+      try {
+        const handle = await HybridSyncService.pickDirectory();
+        if (handle) {
+          const uri = `web-fs://${handle.name}`;
+          await StorageService.setRepertoireFolderUri(uri);
+          await StorageService.setRepertoireFolderName(handle.name);
+          return { uri, name: handle.name };
+        }
+        return null;
+      } catch (e: any) {
+        if (e.name !== 'AbortError') {
+          console.warn('Web folder selection notice:', e);
+        }
+        return null;
+      }
+    }
+
+    try {
+      const dir = await Directory.pickDirectoryAsync();
+      if (dir && dir.uri) {
+        const folderName = dir.name || 'Selected Folder';
+        await StorageService.setRepertoireFolderUri(dir.uri);
+        await StorageService.setRepertoireFolderName(folderName);
+        return { uri: dir.uri, name: folderName };
+      }
+      return null;
+    } catch (e) {
+      console.warn('Native directory pick notice:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Get or create directory for instance scores inside the user-selected folder
+   */
+  static async getScoresDirectory(instanceCode: string): Promise<Directory | null> {
     if (Platform.OS === 'web') return null;
     try {
-      const dir = new Directory(Paths.document, 'refertoire_scores', instanceCode);
+      const customFolderUri = await StorageService.getRepertoireFolderUri();
+      let parentDir: Directory;
+      if (customFolderUri && !customFolderUri.startsWith('web-fs://')) {
+        parentDir = new Directory(customFolderUri);
+      } else {
+        parentDir = new Directory(Paths.document, 'refertoire_scores');
+      }
+
+      const dir = new Directory(parentDir, instanceCode);
       if (!dir.exists) {
         dir.create({ intermediates: true });
       }
@@ -25,7 +71,7 @@ export class DownloadService {
   }
 
   /**
-   * Download a single sheet music score PDF to local storage
+   * Download a single sheet music score PDF to local storage (user-picked folder)
    */
   static async downloadScorePdf(
     instanceCode: string,
@@ -33,19 +79,48 @@ export class DownloadService {
     onProgress?: (progressPercent: number) => void
   ): Promise<string> {
     if (Platform.OS === 'web') {
+      // If direct directory handle is active, write PDF into user's folder
+      try {
+        const handle = await HybridSyncService.getStoredDirectoryHandle();
+        if (handle) {
+          const hasPerm = await HybridSyncService.verifyPermission(handle, true);
+          if (hasPerm) {
+            const folderHandle = await handle.getDirectoryHandle(instanceCode, { create: true });
+            const sanitizedTitle = score.title.replace(/[<>:"/\\|?*]+/g, '-').trim();
+            const fileName = `${sanitizedTitle}.pdf`;
+            const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
+            const res = await fetch(score.sourceUrl);
+            if (res.ok) {
+              const blob = await res.blob();
+              // @ts-ignore
+              const writable = await fileHandle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              const objectUrl = URL.createObjectURL(blob);
+              await StorageService.saveLocalScoreUri(instanceCode, score.id, objectUrl);
+              if (onProgress) onProgress(100);
+              return objectUrl;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Web folder save notice:', err);
+      }
+
       if (onProgress) onProgress(100);
       await StorageService.saveLocalScoreUri(instanceCode, score.id, score.sourceUrl);
       return score.sourceUrl;
     }
 
-    const dir = this.getScoresDirectory(instanceCode);
+    const dir = await this.getScoresDirectory(instanceCode);
     if (!dir) {
       const fallbackUri = score.sourceUrl;
       await StorageService.saveLocalScoreUri(instanceCode, score.id, fallbackUri);
       return fallbackUri;
     }
 
-    const targetFile = new File(dir, `${score.id}.pdf`);
+    const sanitizedTitle = score.title.replace(/[<>:"/\\|?*]+/g, '-').trim();
+    const targetFile = new File(dir, `${sanitizedTitle || score.id}.pdf`);
 
     // Check if already downloaded
     if (targetFile.exists && (targetFile.size ?? 0) > 0) {
@@ -71,14 +146,12 @@ export class DownloadService {
         if (!targetFile.exists) {
           targetFile.create();
         }
-        // Write content
         targetFile.write(FALLBACK_PDF_BASE64);
         if (onProgress) onProgress(100);
         await StorageService.saveLocalScoreUri(instanceCode, score.id, targetFile.uri);
         return targetFile.uri;
       } catch (writeErr) {
         console.warn(`Could not write local cache for ${score.id}:`, writeErr);
-        // Fallback to sourceUrl if file write is unavailable (e.g. web mock)
         const mockUri = targetFile.uri || score.sourceUrl;
         await StorageService.saveLocalScoreUri(instanceCode, score.id, mockUri);
         return mockUri;
@@ -159,8 +232,8 @@ export class DownloadService {
       return;
     }
     try {
-      const dir = new Directory(Paths.document, 'refertoire_scores', instanceCode);
-      if (dir.exists) {
+      const dir = await this.getScoresDirectory(instanceCode);
+      if (dir && dir.exists) {
         dir.delete();
       }
       await StorageService.clearLocalScoreUris(instanceCode);

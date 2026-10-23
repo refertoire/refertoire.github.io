@@ -13,9 +13,62 @@ const STORAGE_KEYS = {
   CUSTOM_INSTANCES: '@refertoire:custom_instances_list',
   REGISTERED_USERS: '@refertoire:registered_users',
   OFFLINE_MODE: '@refertoire:offline_mode',
+  REPERTOIRE_FOLDER_URI: '@refertoire:repertoire_folder_uri',
+  REPERTOIRE_FOLDER_NAME: '@refertoire:repertoire_folder_name',
 };
 
 export class StorageService {
+  /**
+   * Get user-picked repertoire storage folder URI
+   */
+  static async getRepertoireFolderUri(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(STORAGE_KEYS.REPERTOIRE_FOLDER_URI);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Save user-picked repertoire storage folder URI
+   */
+  static async setRepertoireFolderUri(uri: string | null): Promise<void> {
+    try {
+      if (uri) {
+        await AsyncStorage.setItem(STORAGE_KEYS.REPERTOIRE_FOLDER_URI, uri);
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.REPERTOIRE_FOLDER_URI);
+      }
+    } catch (e) {
+      console.warn('Failed to save repertoire folder URI', e);
+    }
+  }
+
+  /**
+   * Get user-picked repertoire storage folder display name
+   */
+  static async getRepertoireFolderName(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(STORAGE_KEYS.REPERTOIRE_FOLDER_NAME);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Save user-picked repertoire storage folder display name
+   */
+  static async setRepertoireFolderName(name: string | null): Promise<void> {
+    try {
+      if (name) {
+        await AsyncStorage.setItem(STORAGE_KEYS.REPERTOIRE_FOLDER_NAME, name);
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.REPERTOIRE_FOLDER_NAME);
+      }
+    } catch (e) {
+      console.warn('Failed to save repertoire folder name', e);
+    }
+  }
   /**
    * Get active choir instance code
    */

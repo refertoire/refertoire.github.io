@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Refertoire — Centralized Ensemble Repertoire & Sheet Music Sync</title>
+  <title>Refertoire: Centralized Ensemble Repertoire & Sheet Music Sync</title>
   <meta name="description" content="End sheet music chaos. Unify your choir or ensemble onto one centralized repertoire hub with instant access code syncing and 100% offline PDF scores.">
   <meta name="theme-color" content="#080B11">
   <link rel="icon" type="image/png" href="refertoire-logo.png">
@@ -34,6 +34,11 @@
       --font-mono: 'JetBrains Mono', monospace;
     }
 
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 80px;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -53,35 +58,30 @@
       position: relative;
     }
 
-    /* Ambient lighting gradient */
-    .ambient-glow {
-      position: fixed;
-      top: -160px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(900px, 100vw);
-      height: 520px;
-      background: radial-gradient(ellipse at 50% 30%, rgba(217, 119, 6, 0.16) 0%, rgba(245, 158, 11, 0.02) 55%, transparent 75%);
+    /* Hero Silk Background */
+    .hero-silk-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
       z-index: 1;
+      overflow: hidden;
     }
 
-    /* Hardware-accelerated background canvas */
-    #music-canvas {
-      position: fixed;
+    .hero-silk-container canvas {
+      position: absolute;
       inset: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      z-index: 0;
-      transform: translateZ(0);
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
     }
 
     .container {
       width: 100%;
-      max-width: 1140px;
+      max-width: 1360px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 clamp(20px, 4vw, 48px);
       position: relative;
       z-index: 10;
     }
@@ -95,21 +95,21 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-subtle);
-      padding: 12px 0;
+      padding: 14px 0;
     }
 
     .nav-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
       min-width: 0;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       text-decoration: none;
       color: var(--text-primary);
       min-width: 0;
@@ -117,12 +117,12 @@
     }
 
     .brand-logo-img {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
       object-fit: contain;
       flex-shrink: 0;
-      box-shadow: 0 2px 10px var(--gold-glow);
+      box-shadow: 0 2px 12px var(--gold-glow);
     }
 
     .brand-text {
@@ -133,7 +133,7 @@
     }
 
     .brand-name {
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 800;
       letter-spacing: -0.4px;
       white-space: nowrap;
@@ -149,17 +149,17 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       flex-shrink: 0;
     }
 
     .nav-link {
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 600;
-      padding: 6px 12px;
-      border-radius: 8px;
+      padding: 7px 14px;
+      border-radius: 9px;
       transition: color 0.15s, background-color 0.15s;
       white-space: nowrap;
     }
@@ -181,9 +181,6 @@
     }
 
     @media (max-width: 680px) {
-      .container {
-        padding: 0 16px;
-      }
       .nav-link-github {
         display: none !important;
       }
@@ -197,9 +194,6 @@
     }
 
     @media (max-width: 520px) {
-      .container {
-        padding: 0 12px;
-      }
       header {
         padding: 10px 0;
       }
@@ -207,11 +201,11 @@
         gap: 8px;
       }
       .brand-logo-img {
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
       }
       .brand-name {
-        font-size: 15px;
+        font-size: 16px;
       }
       .brand-by {
         display: none;
@@ -228,22 +222,32 @@
       }
     }
 
-    /* Hero Section (Left-Aligned with Hardware Mockups) */
-    .hero {
-      padding: clamp(36px, 7vw, 68px) 0 clamp(40px, 6vw, 64px);
+    /* Hero Section: Occupies the main screen viewport */
+    .hero-section {
+      position: relative;
+      overflow: hidden;
+      min-height: calc(100vh - 66px);
+      display: flex;
+      align-items: center;
+      padding: clamp(48px, 7vh, 88px) 0 clamp(56px, 8vh, 96px);
+    }
+
+    .hero-container {
+      width: 100%;
     }
 
     .hero-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: clamp(36px, 6vw, 56px);
+      gap: clamp(44px, 5.5vw, 80px);
       align-items: center;
+      width: 100%;
     }
 
-    @media (min-width: 960px) {
+    @media (min-width: 1024px) {
       .hero-grid {
-        grid-template-columns: 1.08fr 0.92fr;
-        gap: clamp(32px, 4vw, 52px);
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: clamp(44px, 5vw, 88px);
       }
     }
 
@@ -252,13 +256,13 @@
     }
 
     .hero-title {
-      font-size: clamp(32px, 5.2vw, 54px);
+      font-size: clamp(38px, 4.8vw, 64px);
       font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: -1.6px;
-      margin-bottom: 18px;
+      line-height: 1.08;
+      letter-spacing: -2px;
+      margin-bottom: 22px;
       color: #FFFFFF;
-      max-width: 620px;
+      max-width: 680px;
     }
 
     .hero-title .accent {
@@ -268,28 +272,28 @@
     }
 
     .hero-sub {
-      font-size: clamp(15px, 1.8vw, 17px);
+      font-size: clamp(16px, 1.35vw, 18.5px);
       color: var(--text-secondary);
-      max-width: 540px;
-      margin: 0 0 clamp(24px, 4vw, 32px);
-      line-height: 1.6;
+      max-width: 580px;
+      margin: 0 0 clamp(28px, 4vw, 38px);
+      line-height: 1.65;
       font-weight: 400;
     }
 
     /* Call To Action Area */
     .cta-container {
-      max-width: 520px;
+      max-width: 560px;
       margin: 0 0 clamp(20px, 3vw, 28px);
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 12px;
+      gap: 14px;
     }
 
     .cta-actions {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       width: 100%;
     }
 
@@ -305,12 +309,12 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      padding: 14px 22px;
-      border-radius: 12px;
-      font-size: 15px;
+      padding: 16px 26px;
+      border-radius: 14px;
+      font-size: 15.5px;
       font-weight: 700;
       text-decoration: none;
-      min-height: 50px;
+      min-height: 54px;
       cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
       white-space: nowrap;
@@ -323,14 +327,14 @@
     .btn-primary {
       background: #D97706;
       color: #FFFFFF;
-      box-shadow: 0 4px 18px rgba(217, 119, 6, 0.35);
+      box-shadow: 0 6px 22px rgba(217, 119, 6, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     .btn-primary:hover {
       background: #B45309;
-      box-shadow: 0 6px 24px rgba(217, 119, 6, 0.45);
-      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(217, 119, 6, 0.5);
+      transform: translateY(-2px);
     }
 
     .btn-secondary {
@@ -341,34 +345,34 @@
 
     .btn-secondary:hover {
       background: var(--bg-surface-elevated);
-      border-color: rgba(255, 255, 255, 0.18);
-      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
     }
 
     .btn-badge {
-      background: rgba(0, 0, 0, 0.28);
+      background: rgba(0, 0, 0, 0.32);
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 5px;
+      padding: 2.5px 8px;
+      border-radius: 6px;
       color: var(--gold-light);
     }
 
     .cta-subtext {
-      font-size: 12.5px;
+      font-size: 13px;
       color: var(--text-tertiary);
       display: flex;
       align-items: center;
       gap: 8px;
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
-    /* Device Showcase / Mockups: Compact Mini Tablet (7.9-8.4", ~200mm) & Pro Max Phone (6.6-6.9") */
+    /* Device Showcase / Mockups */
     .mockup-showcase {
       position: relative;
       width: 100%;
-      max-width: 440px;
+      max-width: 540px;
       margin: 0 auto;
       display: flex;
       justify-content: flex-end;
@@ -377,52 +381,43 @@
 
     @media (max-width: 768px) {
       .mockup-showcase {
-        max-width: 360px;
+        max-width: 380px;
         justify-content: center;
-        padding-left: 16px;
-        padding-right: 8px;
+        padding-left: 20px;
+        padding-right: 12px;
         margin-top: 16px;
       }
     }
 
-    /* Ambient glow behind hardware */
+    /* Mockup glow element (disabled) */
     .mockup-glow {
-      position: absolute;
-      width: 90%;
-      height: 90%;
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.14) 0%, rgba(217, 119, 6, 0.03) 50%, transparent 70%);
-      top: 5%;
-      left: 5%;
-      pointer-events: none;
-      z-index: 1;
-      filter: blur(30px);
+      display: none;
     }
 
-    /* Compact Mini Tablet Frame (7.9 – 8.4" iPad Mini Series: ~200mm Length, Slim Symmetrical Bezels) */
+    /* Compact Mini Tablet Frame */
     .tablet-mockup {
       position: relative;
       z-index: 2;
-      width: clamp(250px, 32vw, 312px);
+      width: clamp(285px, 29vw, 390px);
       background: #0D121D;
-      border-radius: 22px;
-      padding: 8px 6px 8px;
-      border: 2px solid #232B3E;
-      box-shadow: 0 22px 55px -10px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      border-radius: 26px;
+      padding: 10px 8px 10px;
+      border: 2.5px solid #232B3E;
+      box-shadow: 0 28px 65px -10px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
       transition: transform 0.3s ease;
     }
 
     .tablet-mockup:hover {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
     }
 
-    /* Tablet Hardware Details (Compact Camera & TouchID Power Button) */
     .tablet-cam {
       position: absolute;
-      top: 3px;
+      top: 4px;
       left: 50%;
       transform: translateX(-50%);
-      width: 4px;
-      height: 4px;
+      width: 5px;
+      height: 5px;
       border-radius: 50%;
       background: #182030;
       border: 1px solid rgba(255, 255, 255, 0.16);
@@ -432,8 +427,8 @@
     .tablet-btn-top {
       position: absolute;
       top: -3px;
-      right: 36px;
-      width: 28px;
+      right: 40px;
+      width: 32px;
       height: 2px;
       background: #2B354C;
       border-radius: 2px 2px 0 0;
@@ -441,17 +436,17 @@
 
     .tablet-btn-vol {
       position: absolute;
-      top: 38px;
+      top: 42px;
       right: -3px;
       width: 2px;
-      height: 40px;
+      height: 44px;
       background: #2B354C;
       border-radius: 0 2px 2px 0;
     }
 
     .tablet-screen {
       width: 100%;
-      border-radius: 15px;
+      border-radius: 17px;
       overflow: hidden;
       background: #0B0E17;
       display: block;
@@ -465,78 +460,76 @@
       display: block;
     }
 
-    /* Large / Pro Max Phone Frame (6.6 – 6.9" Flagship: ~163mm Length, Tall 19.5:9 Ratio) */
+    /* Large / Pro Max Phone Frame */
     .phone-mockup {
       position: absolute;
       z-index: 4;
-      left: clamp(-18px, -2.2vw, -26px);
-      bottom: clamp(-14px, -1.8vw, -20px);
-      width: clamp(138px, 17.5vw, 172px);
+      left: clamp(-24px, -2.8vw, -36px);
+      bottom: clamp(-18px, -2.2vw, -26px);
+      width: clamp(155px, 16vw, 212px);
       background: #0B0F19;
-      border-radius: 32px;
-      padding: 9px 6px 8px;
-      border: 2px solid #283348;
-      box-shadow: 0 24px 60px -8px rgba(0, 0, 0, 0.92), 0 0 0 1px rgba(255, 255, 255, 0.14), -10px 12px 24px rgba(0, 0, 0, 0.65);
+      border-radius: 36px;
+      padding: 10px 7px 9px;
+      border: 2.5px solid #283348;
+      box-shadow: 0 30px 70px -10px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.14), -12px 14px 28px rgba(0, 0, 0, 0.65);
       transition: transform 0.3s ease;
     }
 
     .phone-mockup:hover {
-      transform: translateY(-4px) scale(1.01);
+      transform: translateY(-5px) scale(1.015);
     }
 
-    /* Phone Camera Bezel / Dynamic Pill Cutout */
     .phone-cam {
       position: absolute;
-      top: 4px;
+      top: 5px;
       left: 50%;
       transform: translateX(-50%);
-      width: 26px;
-      height: 4px;
+      width: 28px;
+      height: 5px;
       background: #000000;
       border-radius: 9999px;
       z-index: 10;
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Phone Hardware Buttons */
     .phone-btn-vol-up {
       position: absolute;
-      top: 48px;
+      top: 52px;
       left: -3px;
       width: 2px;
-      height: 22px;
+      height: 24px;
       background: #313D57;
       border-radius: 2px 0 0 2px;
     }
 
     .phone-btn-vol-down {
       position: absolute;
-      top: 76px;
+      top: 82px;
       left: -3px;
       width: 2px;
-      height: 22px;
+      height: 24px;
       background: #313D57;
       border-radius: 2px 0 0 2px;
     }
 
     .phone-btn-power {
       position: absolute;
-      top: 58px;
+      top: 66px;
       right: -3px;
       width: 2px;
-      height: 32px;
+      height: 38px;
       background: #313D57;
       border-radius: 0 2px 2px 0;
     }
 
     .phone-screen {
       width: 100%;
-      border-radius: 24px;
+      border-radius: 27px;
       overflow: hidden;
-      background: #0B0E17;
+      background: #080B11;
       display: block;
       line-height: 0;
-      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
     }
 
     .phone-screen img {
@@ -545,31 +538,50 @@
       display: block;
     }
 
+    /* Generic Landing Section wrapper */
+    .landing-section {
+      padding: clamp(80px, 9vw, 128px) 0;
+      position: relative;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
 
-
-    /* Comparison Component: Status Quo vs. Refertoire */
-    .comparison-wrapper {
-      margin-top: 24px;
-      margin-bottom: clamp(48px, 8vw, 76px);
+    .section-header {
+      margin-bottom: clamp(36px, 4.5vw, 56px);
       text-align: left;
     }
 
+    .section-title {
+      font-size: clamp(26px, 3.2vw, 38px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      color: #FFFFFF;
+    }
+
+    .section-sub {
+      font-size: clamp(15px, 1.25vw, 17.5px);
+      color: var(--text-secondary);
+      max-width: 680px;
+      line-height: 1.6;
+    }
+
+    /* Comparison Component: Status Quo vs. Refertoire */
     .comparison-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 18px;
+      gap: clamp(24px, 3vw, 36px);
     }
 
     @media (min-width: 768px) {
       .comparison-grid {
         grid-template-columns: 1fr 1fr;
-        gap: 22px;
+        gap: clamp(24px, 3vw, 36px);
       }
     }
 
     .comparison-card {
-      border-radius: 16px;
-      padding: clamp(20px, 3.5vw, 28px);
+      border-radius: 20px;
+      padding: clamp(28px, 4vw, 42px);
       text-align: left;
       display: flex;
       flex-direction: column;
@@ -582,16 +594,16 @@
 
     .card-after {
       background: rgba(245, 158, 11, 0.035);
-      border: 1px solid rgba(245, 158, 11, 0.32);
-      box-shadow: 0 10px 32px -10px var(--gold-glow);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      box-shadow: 0 12px 36px -10px var(--gold-glow);
     }
 
     .comparison-header {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
+      gap: 8px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
@@ -603,11 +615,11 @@
     }
 
     .comparison-badge {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.8px;
       text-transform: uppercase;
-      padding: 3px 9px;
+      padding: 3.5px 10px;
       border-radius: 6px;
       font-family: var(--font-mono);
     }
@@ -625,9 +637,9 @@
     }
 
     .comparison-title {
-      font-size: clamp(16px, 2.2vw, 18px);
+      font-size: clamp(18px, 2.2vw, 22px);
       font-weight: 800;
-      letter-spacing: -0.4px;
+      letter-spacing: -0.5px;
       color: #FFFFFF;
       display: flex;
       align-items: center;
@@ -635,28 +647,28 @@
     }
 
     .comparison-sub-desc {
-      font-size: 12.5px;
+      font-size: 13.5px;
       color: var(--text-tertiary);
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
     .comparison-list {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 20px;
     }
 
     .comparison-item {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
+      gap: 14px;
     }
 
     .item-bullet {
-      width: 20px;
-      height: 20px;
-      border-radius: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -679,179 +691,163 @@
     .item-body {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
     }
 
     .item-title {
-      font-size: 13.5px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--text-primary);
     }
 
-    .item-text-before {
-      font-size: 12.5px;
+    .item-text-before, .item-text-after {
+      font-size: 13.5px;
       color: var(--text-secondary);
-      line-height: 1.45;
-    }
-
-    .item-text-after {
-      font-size: 12.5px;
-      color: var(--text-secondary);
-      line-height: 1.45;
+      line-height: 1.55;
     }
 
     /* Live Status Metric Strip */
     .metric-strip {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: clamp(48px, 8vw, 76px);
+      gap: clamp(14px, 2vw, 20px);
+      margin-top: clamp(36px, 5vw, 56px);
     }
 
-    @media (min-width: 720px) {
+    @media (min-width: 768px) {
       .metric-strip {
         grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
       }
     }
 
     .metric-box {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 16px;
+      border-radius: 16px;
+      padding: clamp(20px, 3vw, 26px);
       text-align: left;
     }
 
     .metric-value {
       font-family: var(--font-mono);
-      font-size: 19px;
+      font-size: clamp(22px, 2.5vw, 28px);
       font-weight: 800;
       color: var(--gold-light);
-      margin-bottom: 3px;
+      margin-bottom: 6px;
     }
 
     .metric-label {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-secondary);
       font-weight: 500;
     }
 
     /* Features Grid */
-    .section-header {
-      margin-bottom: clamp(24px, 4vw, 36px);
-      text-align: left;
-    }
-
-    .section-title {
-      font-size: clamp(22px, 3.8vw, 32px);
-      font-weight: 800;
-      letter-spacing: -0.8px;
-      margin-bottom: 8px;
-      color: #FFFFFF;
-    }
-
-    .section-sub {
-      font-size: 14.5px;
-      color: var(--text-secondary);
-      max-width: 620px;
-      line-height: 1.5;
-    }
-
     .feature-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 16px;
-      margin-bottom: clamp(48px, 8vw, 80px);
+      gap: clamp(20px, 2.5vw, 28px);
     }
 
-    @media (min-width: 680px) {
+    @media (min-width: 768px) {
       .feature-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 18px;
       }
     }
 
     .feature-cell {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-      padding: 24px 22px;
+      border-radius: 18px;
+      padding: clamp(28px, 3.5vw, 38px);
       display: flex;
       flex-direction: column;
-      transition: border-color 0.2s, transform 0.15s;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
     }
 
     .feature-cell:hover {
-      border-color: rgba(245, 158, 11, 0.35);
-      transform: translateY(-1px);
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .feature-cell-highlight {
+      background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(14, 20, 34, 0.85) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      box-shadow: 0 10px 30px -10px var(--gold-glow);
     }
 
     .feature-icon-wrap {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      background: rgba(245, 158, 11, 0.08);
-      border: 1px solid rgba(245, 158, 11, 0.22);
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       color: var(--gold-light);
     }
 
     .feature-cell h3 {
-      font-size: 16.5px;
+      font-size: 18px;
       font-weight: 800;
-      letter-spacing: -0.3px;
-      margin-bottom: 8px;
+      letter-spacing: -0.4px;
+      margin-bottom: 10px;
       color: #FFFFFF;
     }
 
     .feature-cell p {
-      font-size: 13.5px;
+      font-size: 14.5px;
       color: var(--text-secondary);
-      line-height: 1.55;
+      line-height: 1.6;
     }
 
     /* Workflow Banner */
     .flow-banner {
-      background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(14, 20, 34, 0.6) 100%);
+      background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(14, 20, 34, 0.7) 100%);
       border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: clamp(20px, 4vw, 32px);
-      margin-bottom: clamp(48px, 8vw, 80px);
+      border-radius: 22px;
+      padding: clamp(32px, 5vw, 52px);
+    }
+
+    .flow-banner-title {
+      font-size: clamp(20px, 2.6vw, 24px);
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
     }
 
     .flow-steps {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 16px;
-      margin-top: 20px;
+      gap: clamp(24px, 3.5vw, 44px);
+      margin-top: 28px;
     }
 
-    @media (min-width: 680px) {
+    @media (min-width: 768px) {
       .flow-steps {
         grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
       }
     }
 
     .step-item {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
+      gap: 16px;
     }
 
     .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 7px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
       background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
       color: var(--gold);
       font-family: var(--font-mono);
-      font-weight: 700;
-      font-size: 13px;
+      font-weight: 800;
+      font-size: 15px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -859,31 +855,31 @@
     }
 
     .step-content h4 {
-      font-size: 14px;
+      font-size: 16.5px;
       font-weight: 700;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      color: var(--text-primary);
     }
 
     .step-content p {
-      font-size: 12px;
+      font-size: 13.5px;
       color: var(--text-secondary);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     /* Footer */
     footer {
-      margin-top: auto;
       border-top: 1px solid var(--border-subtle);
-      padding: 28px 0;
+      padding: clamp(36px, 5vw, 48px) 0;
       background: var(--bg);
-      font-size: 13px;
+      font-size: 13.5px;
       color: var(--text-tertiary);
     }
 
     .footer-content {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
       align-items: center;
       text-align: center;
     }
@@ -900,7 +896,7 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 16px;
+      gap: 20px;
     }
 
     .footer-links a {
@@ -917,13 +913,245 @@
       color: var(--gold);
       font-weight: 600;
     }
+
+    /* Navbar Download Button */
+    .nav-btn-download {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gold);
+      color: #080B11;
+      font-weight: 700;
+      font-size: 13.5px;
+      padding: 8px 20px;
+      border-radius: 9px;
+      text-decoration: none;
+      transition: background-color 0.15s, transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.28);
+      white-space: nowrap;
+    }
+
+    .nav-btn-download:hover {
+      background: var(--gold-light);
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* Downloads Comparison Table Section */
+    .downloads-section {
+      padding: clamp(64px, 8vh, 100px) 0;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .version-table-card {
+      background: var(--bg-surface);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .version-table-scroller {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .version-table {
+      width: 100%;
+      min-width: 780px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    /* Table Head */
+    .version-table thead th {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .th-feat-col {
+      width: 38%;
+      padding: 26px 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      vertical-align: middle;
+    }
+
+    .th-platform-col {
+      width: 31%;
+      padding: 26px 28px 10px;
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+      vertical-align: middle;
+    }
+
+    .th-platform-action-col {
+      width: 31%;
+      padding: 6px 28px 24px;
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      vertical-align: middle;
+    }
+
+    .th-feat-head-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+    }
+
+    .th-feat-head-sub {
+      font-size: clamp(17px, 1.8vw, 20px);
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+
+    .th-platform-title {
+      font-size: clamp(19px, 2vw, 22px);
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .version-title-sub {
+      font-size: 13.5px;
+      font-weight: 400;
+      color: var(--text-tertiary);
+      letter-spacing: 0;
+    }
+
+    .th-role-tag {
+      font-size: 11.5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-top: 8px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.01em;
+    }
+
+    .th-role-app {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--gold);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .th-role-web {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .cell-diff-muted {
+      color: var(--text-tertiary);
+    }
+
+    .btn-th-action {
+      width: 100%;
+      max-width: 220px;
+      height: 44px;
+      padding: 0 18px;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 10px;
+    }
+
+    /* Table Body - Spacing & Hairline Divisions */
+    .version-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .version-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .version-table td {
+      padding: 16px 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      vertical-align: middle;
+    }
+
+    .td-feature {
+      width: 38%;
+    }
+
+    .td-platform {
+      width: 31%;
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .version-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tbl-feat-name {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+    }
+
+    .cell-status-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cell-main {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .ind-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .ind-yellow {
+      color: var(--gold);
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .ind-white {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .ind-grey {
+      color: #94A3B8;
+      background: rgba(100, 116, 139, 0.12);
+      border: 1px solid rgba(100, 116, 139, 0.28);
+      font-size: 13px;
+      font-weight: 800;
+    }
   </style>
 </head>
 <body>
-  <!-- Stylistic Animated Music Canvas -->
-  <canvas id="music-canvas" aria-hidden="true"></canvas>
-
-  <div class="ambient-glow" aria-hidden="true"></div>
 
   <!-- Header -->
   <header>
@@ -936,75 +1164,250 @@
         </div>
       </a>
       <div class="nav-actions">
-        <a href="./web/" class="nav-link nav-btn-highlight">Web App</a>
-        <a href="./apk/" class="nav-link"><span class="hide-mobile">Android </span>APK</a>
-        <a href="https://github.com/refertoire/refertoire.github.io" class="nav-link nav-link-github" target="_blank" rel="noopener">GitHub</a>
+        <a href="#downloads" class="nav-btn-download">Download</a>
       </div>
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <main class="container">
-    <section class="hero">
-      <div class="hero-grid">
-        <!-- Left: Text, Summary & Actions -->
-        <div class="hero-content">
-          <h1 class="hero-title">
-            One app to <span class="accent">sync all your pieces</span>
-          </h1>
+  <!-- Main Content Areas -->
+  <main>
+    <!-- Hero Section: Occupies the main screen viewport -->
+    <section class="hero-section" id="hero">
+      <div class="hero-silk-container" id="hero-silk" aria-hidden="true"></div>
+      <div class="container hero-container">
+        <div class="hero-grid">
+          <!-- Left: Text, Summary & Actions -->
+          <div class="hero-content">
+            <h1 class="hero-title">
+              One app to <span class="accent">sync all your pieces</span>
+            </h1>
 
-          <p class="hero-sub">
-            Choir singers struggle with missing sheet music, scattered group chat files, and outdated score editions. Refertoire is a simplified app for syncing and sorting your ensemble's repertoire and pieces—instantly cached offline for every rehearsal and concert.
-          </p>
-
-          <!-- Call To Action Area -->
-          <div class="cta-container">
-            <div class="cta-actions">
-              <a href="./web/" class="btn btn-primary">
-                <span>Centralize Your Choir Scores</span>
-                <span class="btn-badge">Open App</span>
-              </a>
-              <a href="./apk/Refertoire.apk" class="btn btn-secondary" download="Refertoire.apk">
-                <span>Get Standalone APK</span>
-                <span class="btn-badge">49 MB</span>
-              </a>
-            </div>
-            <p class="cta-subtext">
-              Choristers connect in seconds with an 8-character access code. Zero account setup required.
+            <p class="hero-sub">
+              Choir singers struggle with missing sheet music, scattered group chat files, and outdated score editions. Refertoire is a simplified app for syncing and sorting your ensemble's repertoire and pieces, instantly cached offline for every rehearsal and concert.
             </p>
-          </div>
-        </div>
 
-        <!-- Right: Hardware Mockups (Tablet + Overlapping Phone on Left of Tablet) -->
-        <div class="mockup-showcase" aria-label="Refertoire on tablet and mobile devices">
-          <div class="mockup-glow" aria-hidden="true"></div>
-
-          <!-- Tablet Mockup -->
-          <div class="tablet-mockup">
-            <div class="tablet-cam" aria-hidden="true"></div>
-            <div class="tablet-btn-top" aria-hidden="true"></div>
-            <div class="tablet-btn-vol" aria-hidden="true"></div>
-            <div class="tablet-screen">
-              <img src="assets/mockup-tablet.png?v=3" alt="Refertoire choir library interface on compact 8-inch iPad Mini tablet screen" loading="eager" width="744" height="1133">
+            <!-- Call To Action Area -->
+            <div class="cta-container">
+              <div class="cta-actions">
+                <a href="#downloads" class="btn btn-primary">
+                  <span>Download</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                </a>
+              </div>
+              <p class="cta-subtext">
+                Choose between the standalone Android APK or the Web App with hybrid disk sync.
+              </p>
             </div>
           </div>
 
-          <!-- Phone Mockup (Positioned on the left side of the tablet UI) -->
-          <div class="phone-mockup">
-            <div class="phone-cam" aria-hidden="true"></div>
-            <div class="phone-btn-vol-up" aria-hidden="true"></div>
-            <div class="phone-btn-vol-down" aria-hidden="true"></div>
-            <div class="phone-btn-power" aria-hidden="true"></div>
-            <div class="phone-screen">
-              <img src="assets/mockup-mobile.png?v=3" alt="Refertoire choir scores and sorting on 6.6-6.9 inch flagship phone" loading="eager" width="440" height="956">
+          <!-- Right: Hardware Mockups (Tablet + Overlapping Phone on Left of Tablet) -->
+          <div class="mockup-showcase" aria-label="Refertoire on tablet and mobile devices">
+            <div class="mockup-glow" aria-hidden="true"></div>
+
+            <!-- Tablet Mockup -->
+            <div class="tablet-mockup">
+              <div class="tablet-cam" aria-hidden="true"></div>
+              <div class="tablet-btn-top" aria-hidden="true"></div>
+              <div class="tablet-btn-vol" aria-hidden="true"></div>
+              <div class="tablet-screen">
+                <img src="assets/mockup-tablet.png?v=3" alt="Refertoire choir library interface on compact 8-inch iPad Mini tablet screen" loading="eager" width="744" height="1133">
+              </div>
+            </div>
+
+            <!-- Phone Mockup (Positioned on the left side of the tablet UI) -->
+            <div class="phone-mockup">
+              <div class="phone-cam" aria-hidden="true"></div>
+              <div class="phone-btn-vol-up" aria-hidden="true"></div>
+              <div class="phone-btn-vol-down" aria-hidden="true"></div>
+              <div class="phone-btn-power" aria-hidden="true"></div>
+              <div class="phone-screen">
+                <img src="assets/mockup-mobile.png?v=3" alt="Refertoire choir scores and sorting on 6.6-6.9 inch flagship phone" loading="eager" width="440" height="956">
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-      <!-- Problem-Solution Visual Comparison: Status Quo vs. Refertoire -->
-      <div class="comparison-wrapper">
+    <!-- Platform Comparison & Downloads Section: APK on left, Web on right -->
+    <section class="landing-section downloads-section" id="downloads">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Choose Your Version</h2>
+          <p class="section-sub">The Web version focuses on syncing and sorting files in your computer directory. The Android app does the same, while also serving as a dedicated stage viewer and uploading tool for rehearsals.</p>
+        </div>
+
+                                <div class="version-table-card">
+          <div class="version-table-scroller">
+            <table class="version-table">
+              <thead>
+                <tr class="tr-head-title-row">
+                  <th class="th-feat-col" rowspan="2">
+                    <div class="th-feat-head-title">Comparison</div>
+                    <div class="th-feat-head-sub">App vs. Web Capabilities</div>
+                  </th>
+                  <th class="th-platform-col">
+                    <div class="th-platform-title">Android APK</div>
+                    <div class="th-role-tag th-role-app">Viewer • Uploader • File Sync</div>
+                  </th>
+                  <th class="th-platform-col">
+                    <div class="th-platform-title">
+                      <span>Web Version</span>
+                      <span class="version-title-sub">for iOS and Desktops</span>
+                    </div>
+                    <div class="th-role-tag th-role-web">Directory Sync &amp; Sorting</div>
+                  </th>
+                </tr>
+                <tr class="tr-head-btn-row">
+                  <th class="th-platform-action-col">
+                    <a href="./apk/Refertoire.apk" class="btn btn-primary btn-th-action" download="Refertoire.apk">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      <span>Download APK</span>
+                    </a>
+                  </th>
+                  <th class="th-platform-action-col">
+                    <a href="./web/" class="btn btn-secondary btn-th-action">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                      <span>Launch Web App</span>
+                    </a>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Primary Role</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Stage viewer, uploader &amp; folder sync</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Sync &amp; sort files in your directory</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Sync Scores to Local Folder</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Saves directly into your device folder</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Saves directly into your computer folder</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Organize &amp; Sort Pieces</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Sorts by voice parts (SATB) &amp; seasons</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Sorts by voice parts (SATB) &amp; seasons</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Built-in Sheet Music Viewer</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Dedicated stage reader with page turns</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-grey" title="Not available">✕</span>
+                      <span class="cell-main cell-diff-muted">Syncs files only (view in system reader)</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Upload &amp; Manage Pieces</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Upload new scores directly for choir</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-grey" title="Not available">✕</span>
+                      <span class="cell-main cell-diff-muted">Sync only (uploading is done in app)</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Wireless Foot Pedal Turns</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Hands-free page turns on stage</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-grey" title="Not available">✕</span>
+                      <span class="cell-main cell-diff-muted">Not supported in directory sync</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="td-feature">
+                    <span class="tbl-feat-name">Best Suited For</span>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">Android tablets &amp; phones (rehearsals)</span>
+                    </div>
+                  </td>
+                  <td class="td-platform">
+                    <div class="cell-status-wrap">
+                      <span class="ind-icon ind-yellow" title="Supported">✓</span>
+                      <span class="cell-main">PC, Mac, iPad local directory manager</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problem-Solution Visual Comparison: Status Quo vs. Refertoire -->
+    <section class="landing-section comparison-section" id="problem-solution">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">The Problem & The Fix</h2>
+          <p class="section-sub">Singers lose precious rehearsal time hunting through messaging threads and dealing with unorganized files. Refertoire solves choir score management once and for all.</p>
+        </div>
+
         <div class="comparison-grid">
           <!-- The Problem: Status Quo -->
           <div class="comparison-card card-before">
@@ -1013,7 +1416,7 @@
                 <span class="comparison-badge badge-before">Status Quo</span>
               </div>
               <h3 class="comparison-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 Disorganized Repertoire Tracking
               </h3>
               <p class="comparison-sub-desc">How choral groups lose rehearsal time and struggle to keep pieces organized</p>
@@ -1021,7 +1424,7 @@
             <ul class="comparison-list">
               <li class="comparison-item">
                 <div class="item-bullet bullet-before" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
                 <div class="item-body">
                   <span class="item-title">Scattered Score Files</span>
@@ -1030,7 +1433,7 @@
               </li>
               <li class="comparison-item">
                 <div class="item-bullet bullet-before" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
                 <div class="item-body">
                   <span class="item-title">Difficult Song Classification</span>
@@ -1039,7 +1442,7 @@
               </li>
               <li class="comparison-item">
                 <div class="item-bullet bullet-before" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
                 <div class="item-body">
                   <span class="item-title">Disorganized Rehearsal Flow</span>
@@ -1048,7 +1451,7 @@
               </li>
               <li class="comparison-item">
                 <div class="item-bullet bullet-before" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
                 <div class="item-body">
                   <span class="item-title">Sanctuary Signal Dropouts</span>
@@ -1065,7 +1468,7 @@
                 <span class="comparison-badge badge-after">With Refertoire</span>
               </div>
               <h3 class="comparison-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 Centralized Library & Instant Sync
               </h3>
               <p class="comparison-sub-desc">One synchronized digital binder with immediate sorting and guaranteed offline access</p>
@@ -1073,7 +1476,7 @@
             <ul class="comparison-list">
               <li class="comparison-item">
                 <div class="item-bullet bullet-after" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
                 <div class="item-body">
                   <span class="item-title">1-Step Access Code Sync</span>
@@ -1082,7 +1485,7 @@
               </li>
               <li class="comparison-item">
                 <div class="item-bullet bullet-after" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
                 <div class="item-body">
                   <span class="item-title">Instant Song Classification</span>
@@ -1091,7 +1494,7 @@
               </li>
               <li class="comparison-item">
                 <div class="item-bullet bullet-after" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
                 <div class="item-body">
                   <span class="item-title">Ordered Performance Setlists</span>
@@ -1100,7 +1503,7 @@
               </li>
               <li class="comparison-item">
                 <div class="item-bullet bullet-after" aria-hidden="true">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
                 <div class="item-body">
                   <span class="item-title">Guaranteed Offline Local Storage</span>
@@ -1110,104 +1513,115 @@
             </ul>
           </div>
         </div>
-      </div>
 
-      <!-- Quick Metrics Strip -->
-      <div class="metric-strip">
-        <div class="metric-box">
-          <div class="metric-value">0 ms</div>
-          <div class="metric-label">Offline Reader Latency</div>
-        </div>
-        <div class="metric-box">
-          <div class="metric-value">1-Step</div>
-          <div class="metric-label">Access Code Pairing</div>
-        </div>
-        <div class="metric-box">
-          <div class="metric-value">PDF.js</div>
-          <div class="metric-label">High-DPI Score Reader</div>
-        </div>
-        <div class="metric-box">
-          <div class="metric-value">Stage</div>
-          <div class="metric-label">Glare-Free Dark Mode</div>
+        <!-- Quick Metrics Strip -->
+        <div class="metric-strip">
+          <div class="metric-box">
+            <div class="metric-value">0 ms</div>
+            <div class="metric-label">Offline Reader Latency</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value">1-Step</div>
+            <div class="metric-label">Access Code Pairing</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value">PDF.js</div>
+            <div class="metric-label">High-DPI Score Reader</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value">Stage</div>
+            <div class="metric-label">Glare-Free Dark Mode</div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- Core Capabilities Grid (Built for Choirs & Ensembles) -->
-    <div class="section-header">
-      <h2 class="section-title">Built for Choirs & Ensembles</h2>
-      <p class="section-sub">Five essential pillars designed specifically for choral rehearsals, liturgical seasons, concert performances, and local file management.</p>
-    </div>
-
-    <div class="feature-grid">
-      <div class="feature-cell">
-        <div class="feature-icon-wrap" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path><path d="m14 9 2 2"></path></svg>
+    <section class="landing-section features-section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Built for Choirs & Ensembles</h2>
+          <p class="section-sub">Five essential pillars designed specifically for choral rehearsals, liturgical seasons, concert performances, and local file management.</p>
         </div>
-        <h3>1-Step Code Sync</h3>
-        <p>Connect your entire choir in seconds with a single 8-character ensemble access code. Instantly syncs the full repertoire manifest and caches all sheet music PDFs directly to local device storage—no passwords or account creation needed for singers.</p>
-      </div>
 
-      <div class="feature-cell">
-        <div class="feature-icon-wrap" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-        </div>
-        <h3>Study Mode with Built-in PDF Viewer & Page Flip</h3>
-        <p>Built-in high-DPI PDF viewer engineered for rehearsals and study. Features tactile single-page flip turns, horizontal swipe, or continuous vertical scroll, with Bluetooth foot-pedal turning and glare-free stage dark mode.</p>
-      </div>
+        <div class="feature-grid">
+          <div class="feature-cell">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="m21 2-9.6 9.6"></path><path d="m15.5 7.5 3 3"></path><path d="m14 9 2 2"></path></svg>
+            </div>
+            <h3>1-Step Code Sync</h3>
+            <p>Connect your entire choir in seconds with a single 8-character ensemble access code. Prompts singers to pick their preferred local folder, then saves, references, and caches all sheet music PDFs directly into that chosen directory for 100% offline access. No passwords or account creation needed for singers.</p>
+          </div>
 
-      <div class="feature-cell">
-        <div class="feature-icon-wrap" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-        </div>
-        <h3>Sorting by Song Classification</h3>
-        <p>Instantly sort and filter your repertoire library by choral voicings (SATB, SSAA, TTBB, SAB), liturgical seasons (Advent, Lent, Easter, Ordinary Time), musical genres, key signatures, and composer surnames.</p>
-      </div>
+          <div class="feature-cell">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            </div>
+            <h3>Study Mode with Built-in PDF Viewer & Page Flip</h3>
+            <p>Built-in high-DPI PDF viewer engineered for rehearsals and study. Features tactile single-page flip turns, horizontal swipe, or continuous vertical scroll, with Bluetooth foot-pedal turning and glare-free stage dark mode.</p>
+          </div>
 
-      <div class="feature-cell">
-        <div class="feature-icon-wrap" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        </div>
-        <h3>Scheduling & Grouping Pieces by Performance</h3>
-        <p>Group pieces into dedicated concert programs, liturgical services, and rehearsal setlists. Directors arrange the performance order once; every singer's digital binder re-sequences automatically.</p>
-      </div>
+          <div class="feature-cell">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            </div>
+            <h3>Sorting by Song Classification</h3>
+            <p>Instantly sort and filter your repertoire library by choral voicings (SATB, SSAA, TTBB, SAB), liturgical seasons (Advent, Lent, Easter, Ordinary Time), musical genres, key signatures, and composer surnames.</p>
+          </div>
 
-      <div class="feature-cell" style="grid-column: 1 / -1;">
-        <div class="feature-icon-wrap" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><polyline points="12 11 12 17 9 14"></polyline><polyline points="12 17 15 14"></polyline></svg>
+          <div class="feature-cell">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </div>
+            <h3>Scheduling & Grouping Pieces by Performance</h3>
+            <p>Group pieces into dedicated concert programs, liturgical services, and rehearsal setlists. Directors arrange the performance order once; every singer's digital binder re-sequences automatically.</p>
+          </div>
+
+          <div class="feature-cell feature-cell-highlight" style="grid-column: 1 / -1;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <div class="feature-icon-wrap" style="margin-bottom: 0;" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><polyline points="12 11 12 17 9 14"></polyline><polyline points="12 17 15 14"></polyline></svg>
+              </div>
+              <span class="comparison-badge badge-after">Mobile & Web Local Folders</span>
+            </div>
+            <h3 style="margin-top: 14px;">User-Selected Folder Storage (Pick, Save & Reference Anywhere)</h3>
+            <p>Refertoire asks singers to pick a folder where the repertoire will be saved into. The app references and manages your sheet music PDFs directly from that chosen directory (on Android storage, or your PC and Mac hard drive, Dropbox, or iCloud), syncing files automatically whenever the director updates scores.</p>
+          </div>
         </div>
-        <h3>Local Directory Sync Agent (Web for PC & iOS)</h3>
-        <p>For PC and Mac users, the web application functions as an automated file manager sync agent, mirroring the choir's sheet music and folder hierarchy directly into your chosen local drive (Dropbox, iCloud, or hard disk). For iPad and iPhone users who cannot sideload APKs, export structured folder archives straight into the iOS Files app or dispatch scores into forScore and PiaScore in one click.</p>
       </div>
-    </div>
+    </section>
 
     <!-- How It Works Flow -->
-    <div class="flow-banner">
-      <h3 style="font-size: 17px; font-weight: 700; color: #FFFFFF;">How Choirs Centralize</h3>
-      <div class="flow-steps">
-        <div class="step-item">
-          <div class="step-num">1</div>
-          <div class="step-content">
-            <h4>Director Creates Repertoire</h4>
-            <p>Upload PDF scores, assign voicings, and generate an ensemble access code.</p>
-          </div>
-        </div>
-        <div class="step-item">
-          <div class="step-num">2</div>
-          <div class="step-content">
-            <h4>Singers Enter the Code</h4>
-            <p>Every score syncs and caches automatically on each chorister's device.</p>
-          </div>
-        </div>
-        <div class="step-item">
-          <div class="step-num">3</div>
-          <div class="step-content">
-            <h4>Rehearse 100% Offline</h4>
-            <p>Sing anywhere without worrying about church stone walls or cellular dropouts.</p>
+    <section class="landing-section flow-section" id="workflow">
+      <div class="container">
+        <div class="flow-banner">
+          <h3 class="flow-banner-title">How Choirs Centralize</h3>
+          <div class="flow-steps">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h4>Director Creates Repertoire</h4>
+                <p>Upload PDF scores, assign voicings, and generate an ensemble access code.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h4>Singers Enter the Code</h4>
+                <p>Every score syncs and caches automatically on each chorister's device.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h4>Rehearse 100% Offline</h4>
+                <p>Sing anywhere without worrying about church stone walls or cellular dropouts.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   </main>
 
   <!-- Footer -->
@@ -1223,99 +1637,27 @@
     </div>
   </footer>
 
-  <!-- Ultra-Lightweight Music Staff Animation Canvas Script -->
+  <!-- Silk Background Script -->
+  <script src="assets/silk.js"></script>
   <script>
     (function() {
-      const canvas = document.getElementById('music-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d', { alpha: true });
-      if (!ctx) return;
-
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let width = 0;
-      let height = 0;
-      let isMobile = false;
-      let dpr = 1;
-      let grad = null;
-
-      function resize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        isMobile = width < 768;
-        dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.25);
-        canvas.width = Math.floor(width * dpr);
-        canvas.height = Math.floor(height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-        grad = ctx.createLinearGradient(0, height * 0.8, width, height * 0.2);
-        grad.addColorStop(0, 'rgba(217, 119, 6, 0.04)');
-        grad.addColorStop(0.5, 'rgba(245, 158, 11, 0.09)');
-        grad.addColorStop(1, 'rgba(217, 119, 6, 0.02)');
-      }
-
-      window.addEventListener('resize', resize, { passive: true });
-      resize();
-
-      if (prefersReduced) return;
-
-      const notes = [];
-      const noteCount = isMobile ? 6 : 12;
-      const noteGlyphs = ['♩', '♪', '♫', '♬', '𝄢', '𝄞'];
-
-      for (let i = 0; i < noteCount; i++) {
-        notes.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          speed: 0.25 + Math.random() * 0.45,
-          glyph: noteGlyphs[i % noteGlyphs.length],
-          size: 14 + Math.random() * 12,
-          opacity: 0.08 + Math.random() * 0.14,
-          drift: (Math.random() - 0.5) * 0.2
+      var heroSilk = document.getElementById('hero-silk');
+      if (heroSilk && typeof window.initSilk === 'function') {
+        window.initSilk(heroSilk, {
+          color: '#3e3e3e',
+          sheenColor: '#ffffff',
+          speed: 6.9,
+          scale: 1,
+          rotation: 0,
+          sheen: 0.5,
+          depth: 0,
+          glow: 0,
+          noiseIntensity: 1.4,
+          mouseInteraction: false,
+          clickRipple: false,
+          intro: false
         });
       }
-
-      let frame = 0;
-      function animate() {
-        frame++;
-        if (frame % (isMobile ? 2 : 1) === 0) {
-          ctx.clearRect(0, 0, width, height);
-
-          // Draw 5 subtle staff lines across screen
-          if (grad) {
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 1;
-            const baseY = height * 0.45;
-            const spacing = 18;
-            for (let l = 0; l < 5; l++) {
-              ctx.beginPath();
-              ctx.moveTo(0, baseY + l * spacing);
-              ctx.bezierCurveTo(
-                width * 0.33, baseY + l * spacing + Math.sin(frame * 0.005 + l) * 12,
-                width * 0.66, baseY + l * spacing - Math.sin(frame * 0.005 + l) * 12,
-                width, baseY + l * spacing
-              );
-              ctx.stroke();
-            }
-          }
-
-          // Draw subtle drifting notes
-          for (let i = 0; i < notes.length; i++) {
-            const n = notes[i];
-            n.y -= n.speed;
-            n.x += n.drift;
-            if (n.y < -30) {
-              n.y = height + 30;
-              n.x = Math.random() * width;
-            }
-            ctx.fillStyle = `rgba(245, 158, 11, ${n.opacity})`;
-            ctx.font = `${n.size}px serif`;
-            ctx.fillText(n.glyph, n.x, n.y);
-          }
-        }
-        requestAnimationFrame(animate);
-      }
-
-      requestAnimationFrame(animate);
     })();
   </script>
 </body>
